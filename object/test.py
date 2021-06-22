@@ -129,7 +129,7 @@ if __name__ == "__main__":
         args.out_file.write(print_args(args) + '\n')
         args.out_file.flush()
 
-        args.dset_path = './data/semi'
+        args.dset_path = './data/semi_processed'
 
         test_target(args)
 
@@ -152,6 +152,6 @@ if __name__ == "__main__":
             args.out_file.write(print_args(args) + '\n')
             args.out_file.flush()
 
-            args.dset_path = './data/semi'
+            args.dset_path = './data/semi_processed'
 
             test_target(args)

@@ -258,7 +258,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
-    args.src_dset_path = './data/semi'
+    args.src_dset_path = './data/semi_processed'
     args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' + str(args.weight_naive) +'_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
     if not osp.exists(args.output_dir_train):
