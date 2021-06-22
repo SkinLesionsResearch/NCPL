@@ -2,3 +2,4 @@
 ckps
 test
 __pycache__
+*.log
