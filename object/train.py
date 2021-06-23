@@ -88,17 +88,23 @@ def obtain_confident_loader(loader, net, args):
     prob, predict = torch.max(all_output, 1)
     confident_indices = all_index[prob > args.threshold]
 
-    all_accuracy = torch.sum(torch.squeeze(predict).float() == all_label).item() / float(all_label.size()[0])
-    confident_accuracy = torch.sum(torch.squeeze(predict[confident_indices]).float() == all_label[confident_indices]).item() / float(len(confident_indices))
-    log_str = 'All Accuracy = {:.2f}%, Confident Accuracy = {:.2f}%, Confident Data Count: {}'.format(all_accuracy * 100, confident_accuracy * 100, len(confident_indices))
+    all_accuracy = torch.sum(
+        torch.squeeze(predict).float() == all_label).item() / float(all_label.size()[0])
+    confident_accuracy = torch.sum(
+        torch.squeeze(
+            predict[confident_indices]).float() == all_label[confident_indices]).item() / float(len(confident_indices))
+    log_str = 'All Accuracy = {:.2f}%, Confident Accuracy = {:.2f}%, Confident Data Count: {}'\
+        .format(all_accuracy * 100, confident_accuracy * 100, len(confident_indices))
 
     args.out_file.write(log_str + '\n')
     args.out_file.flush()
     print(log_str+'\n')
 
     # Create Confident Dataloader
-    train_u_txt = open(osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
-    dset = ImageList_confident([train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
+    train_u_txt = open(
+        osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
+    dset = ImageList_confident(
+        [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
     confident_dset_loader = DataLoader(dset, batch_size=args.batch_size, shuffle=True,
                                            num_workers=args.worker, drop_last=True)
 
@@ -166,7 +172,8 @@ def train_source(args):
 
         # AFM
         logits_train, afm_logits_train = net(inputs_x, afm=True)
-        loss_afm = args.weight_naive * F.cross_entropy(afm_logits_train, labels_x) + args.weight_afm * F.cross_entropy(logits_train, labels_x)
+        loss_afm = args.weight_naive * F.cross_entropy(
+            afm_logits_train, labels_x) + args.weight_afm * F.cross_entropy(logits_train, labels_x)
         losses_afm.append(loss_afm.item())
 
         # Running Accuracy
@@ -181,7 +188,8 @@ def train_source(args):
         else:
             loss = loss_afm + args.weight_u * loss_c_afm
             print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, loss_c_afm: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
-                .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), running_corrects_x.item(), running_corrects_c.item()))
+                .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
+                        running_corrects_x.item(), running_corrects_c.item()))
 
         losses.append(loss.item())
         iter_num += 1
@@ -201,7 +209,8 @@ def train_source(args):
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
                     .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, sensitivity, specificity, roc_auc)
             else:
-                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
+                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(
+                    epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
 
             args.out_file.write(log_str + '\n')
             args.out_file.flush()
@@ -259,7 +268,8 @@ if __name__ == "__main__":
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
     args.src_dset_path = './data/semi_processed'
-    args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' + str(args.weight_naive) +'_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
+    args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' \
+                  + str(args.weight_naive) +'_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)

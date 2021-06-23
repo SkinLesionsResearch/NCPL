@@ -42,8 +42,7 @@ class ImageList(Dataset):
         imgs = make_confident_dataset(image_list, labels, args)
         if len(imgs) == 0:
             raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                                                                             "Supported image extensions are: " + ",".join(
-                IMG_EXTENSIONS)))
+                                "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
         self.imgs = imgs
         self.transform = transform
         self.target_transform = target_transform
@@ -69,9 +68,8 @@ class ImageList(Dataset):
     def __init__(self, image_list, args, labels=None, transform=None, target_transform=None, mode='RGB'):
         imgs = make_dataset(image_list, labels, args)
         if len(imgs) == 0:
-            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                                                                             "Supported image extensions are: " + ",".join(
-                IMG_EXTENSIONS)))
+            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n" +
+                                 "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
         self.imgs = imgs
         self.transform = transform
         self.target_transform = target_transform
@@ -97,9 +95,8 @@ class ImageList_idx(Dataset):
     def __init__(self, image_list, args, labels=None, transform=None, target_transform=None, mode='RGB'):
         imgs = make_dataset(image_list, labels, args)
         if len(imgs) == 0:
-            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                                                                             "Supported image extensions are: " + ",".join(
-                IMG_EXTENSIONS)))
+            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n" +
+                                 "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
         self.imgs = imgs
         self.transform = transform
         self.target_transform = target_transform
@@ -125,9 +122,8 @@ class ImageList_confident(Dataset):
     def __init__(self, image_list, args, pseudo_labels=None, real_labels=None, transform=None, target_transform=None, mode='RGB'):
         imgs = make_confident_dataset(image_list, pseudo_labels, real_labels, args)
         if len(imgs) == 0:
-            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                                                                             "Supported image extensions are: " + ",".join(
-                IMG_EXTENSIONS)))
+            raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n" +
+                                 "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
         self.imgs = imgs
         self.transform = transform
         self.target_transform = target_transform
