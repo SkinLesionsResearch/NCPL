@@ -17,12 +17,15 @@ from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
 
 import warnings
+
 warnings.filterwarnings("ignore")
+
 
 def op_copy(optimizer):
     for param_group in optimizer.param_groups:
         param_group['lr0'] = param_group['lr']
     return optimizer
+
 
 def data_load(args):
     ## prepare data
@@ -36,18 +39,18 @@ def data_load(args):
     dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train())
     if args.imb == True:
         dset_loaders["train_x"] = DataLoader(dsets["train_x"], batch_size=args.batch_size,
-                                           sampler=ImbalancedDatasetSampler(dsets["train"]),
-                                           num_workers=args.worker, drop_last=True)
+                                             sampler=ImbalancedDatasetSampler(dsets["train"]),
+                                             num_workers=args.worker, drop_last=True)
     else:
         dset_loaders["train_x"] = DataLoader(dsets["train_x"], batch_size=args.batch_size, shuffle=True,
-                                           num_workers=args.worker, drop_last=True)
+                                             num_workers=args.worker, drop_last=True)
 
     dset_loaders["train_u"] = DataLoader(dsets["train_u"], batch_size=args.batch_size, shuffle=False,
-                                           num_workers=args.worker, drop_last=False)
+                                         num_workers=args.worker, drop_last=False)
 
     dsets["test"] = ImageList(test_txt, args, transform=image_test())
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
-                                           num_workers=args.worker, drop_last=True)
+                                      num_workers=args.worker, drop_last=True)
     print('Labeled training Data Count:', len(dsets["train_x"]), ', Distribution:')
     df_train = pd.DataFrame(dsets["train_x"].imgs, columns=['class', 'num'])
     print(df_train.groupby('num').count())
@@ -60,6 +63,7 @@ def data_load(args):
     df_train = pd.DataFrame(dsets["test"].imgs, columns=['class', 'num'])
     print(df_train.groupby('num').count())
     return dset_loaders
+
 
 def obtain_confident_loader(loader, net, args):
     start_test = True
@@ -93,20 +97,21 @@ def obtain_confident_loader(loader, net, args):
     confident_accuracy = torch.sum(
         torch.squeeze(
             predict[confident_indices]).float() == all_label[confident_indices]).item() / float(len(confident_indices))
-    log_str = 'All Accuracy = {:.2f}%, Confident Accuracy = {:.2f}%, Confident Data Count: {}'\
+    log_str = 'All Accuracy = {:.2f}%, Confident Accuracy = {:.2f}%, Confident Data Count: {}' \
         .format(all_accuracy * 100, confident_accuracy * 100, len(confident_indices))
 
     args.out_file.write(log_str + '\n')
     args.out_file.flush()
-    print(log_str+'\n')
+    print(log_str + '\n')
 
     # Create Confident Dataloader
     train_u_txt = open(
         osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
     dset = ImageList_confident(
-        [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
+        [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), \
+        real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
     confident_dset_loader = DataLoader(dset, batch_size=args.batch_size, shuffle=True,
-                                           num_workers=args.worker, drop_last=True)
+                                       num_workers=args.worker, drop_last=True)
 
     print('Confident Data Count:', len(dset), ', Confusion Matrix:')
     df_train = pd.DataFrame(dset.imgs, columns=['class', 'pseudo_label', 'true_label'])
@@ -114,6 +119,7 @@ def obtain_confident_loader(loader, net, args):
     print(confusion_matrix(df_train['true_label'], df_train['pseudo_label']))
 
     return confident_dset_loader
+
 
 def train_source(args):
     SEED = args.seed
@@ -184,12 +190,12 @@ def train_source(args):
         if epoch < args.start_u:
             loss = loss_afm
             print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, acc_x: {:.2f}%'
-                .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), running_corrects_x.item()))
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), running_corrects_x.item()))
         else:
             loss = loss_afm + args.weight_u * loss_c_afm
             print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, loss_c_afm: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
-                .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
-                        running_corrects_x.item(), running_corrects_c.item()))
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
+                          running_corrects_x.item(), running_corrects_c.item()))
 
         losses.append(loss.item())
         iter_num += 1
@@ -207,7 +213,8 @@ def train_source(args):
             if args.num_classes == 2:
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},' \
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
-                    .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, sensitivity, specificity, roc_auc)
+                    .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy,
+                            kappa, sensitivity, specificity, roc_auc)
             else:
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(
                     epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
@@ -229,11 +236,13 @@ def train_source(args):
 
     return net
 
+
 def print_args(args):
     s = "==========================================\n"
     for arg, content in args.__dict__.items():
         s += "{}:{}\n".format(arg, content)
     return s
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
@@ -269,7 +278,7 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
     args.src_dset_path = './data/semi_processed'
     args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' \
-                  + str(args.weight_naive) +'_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
+                  + str(args.weight_naive) + '_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
@@ -277,7 +286,6 @@ if __name__ == "__main__":
         os.makedirs(args.output_dir_train)
 
     args.out_file = open(osp.join(args.output_dir_train, 'log.txt'), 'w')
-    args.out_file.write(print_args(args)+'\n')
+    args.out_file.write(print_args(args) + '\n')
     args.out_file.flush()
     train_source(args)
-
