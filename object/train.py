@@ -37,7 +37,7 @@ def data_load(args):
 
     dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train())
     dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train())
-    if args.imb == True:
+    if args.imb:
         dset_loaders["train_x"] = DataLoader(dsets["train_x"], batch_size=args.batch_size,
                                              sampler=ImbalancedDatasetSampler(dsets["train"]),
                                              num_workers=args.worker, drop_last=True)
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
     parser.add_argument('--gpu_ids', type=str, nargs='?', default='0,1,2,3,4,5,6,7', help="device id to run")
     # parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help="device id to run")
-    parser.add_argument('--labeled_num', type=int, default=500, help="number of training labeled samples")
+    parser.add_argument('--labeled_num', type=int, default=500, help="number of training labeled samples[500,1000,1500,2000,2500]")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
 
@@ -265,9 +265,9 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, default='resnet50')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 
-    parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of naive classifier')
-    parser.add_argument('--weight-afm', default=0.7, type=float, help='loss weight of afm')
-    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of afm')
+    parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of afm labeled')
+    parser.add_argument('--weight-afm', default=0.7, type=float, help='loss weight of ce labeled')
+    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of afm unlabeled')
     parser.add_argument('--threshold', type=float, default=0.99, help="threshold for confident data")
 
     parser.add_argument('--distance', type=str, default='cosine', choices=["euclidean", "cosine"])
