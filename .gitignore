@@ -4,3 +4,5 @@ test
 __pycache__
 *.log
 *.py
+data_ham10000
+results

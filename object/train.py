@@ -8,6 +8,7 @@ import torch.optim as optim
 import pandas as pd
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from object.data_list import ImageList, ImageList_idx, ImageList_confident
 import json
 import random
@@ -187,15 +188,22 @@ def train_source(args):
         num_correct_x = torch.sum(preds_x == labels_x.data)
         running_corrects_x = num_correct_x.float() / float(preds_x.shape[0]) * 100
 
+        args.num_eval = iter_num
         if epoch < args.start_u:
             loss = loss_afm
             print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, acc_x: {:.2f}%'
                   .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), running_corrects_x.item()))
+            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
+            args.writer.add_scalar("train/2.acc_x", running_corrects_x.item(), args.num_eval)
         else:
             loss = loss_afm + args.weight_u * loss_c_afm
             print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, loss_c_afm: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
                   .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
                           running_corrects_x.item(), running_corrects_c.item()))
+            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
+            args.writer.add_scalar("train/2.loss_c_afm", loss_c_afm.item(), args.num_eval)
+            args.writer.add_scalar("train/3.acc_x", running_corrects_x.item(), args.num_eval)
+            args.writer.add_scalar("train/4.acc_u", running_corrects_c.item(), args.num_eval)
 
         losses.append(loss.item())
         iter_num += 1
@@ -246,9 +254,12 @@ def print_args(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
+    parser.add_argument('--name', type=str, default="afm-resnet", help='experiment name')
+    parser.add_argument('--src-dset-path', type=str, default='./data/semi_processed', help='source dataset path')
     parser.add_argument('--gpu_ids', type=str, nargs='?', default='0,1,2,3,4,5,6,7', help="device id to run")
     # parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help="device id to run")
-    parser.add_argument('--labeled_num', type=int, default=500, help="number of training labeled samples[500,1000,1500,2000,2500]")
+    parser.add_argument('--labeled_num', type=int, default=500,
+                        help="number of training labeled samples[500,1000,1500,2000,2500]")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
 
@@ -276,7 +287,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
-    args.src_dset_path = './data/semi_processed'
     args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' \
                   + str(args.weight_naive) + '_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
@@ -284,6 +294,8 @@ if __name__ == "__main__":
         os.system('mkdir -p ' + args.output_dir_train)
     if not osp.exists(args.output_dir_train):
         os.makedirs(args.output_dir_train)
+
+    args.writer = SummaryWriter(f"results/{args.name}")
 
     args.out_file = open(osp.join(args.output_dir_train, 'log.txt'), 'w')
     args.out_file.write(print_args(args) + '\n')
