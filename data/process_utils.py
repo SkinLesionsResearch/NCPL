@@ -8,7 +8,7 @@ def process_file(base_path, src_file_path, target_file_path):
 
     def process_label(label):
         return label + 1
-
+    print("executed path: ", src_file_path)
     input_df = pd.read_csv(src_file_path, delimiter=" ", index_col=None, header=None)
     input_df.iloc[:, 0] = input_df.iloc[:, 0].map(process_row)
     with open(target_file_path, 'w') as f:
