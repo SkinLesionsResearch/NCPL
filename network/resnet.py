@@ -2,8 +2,10 @@ import torch
 import torch.nn as nn
 from torchvision import models
 import torch.nn.functional as F
-res_dict = {"resnet18":models.resnet18, "resnet34":models.resnet34, "resnet50":models.resnet50,
-"resnet101":models.resnet101, "resnet152":models.resnet152, "resnext50":models.resnext50_32x4d, "resnext101":models.resnext101_32x8d}
+res_dict = {"resnet18":models.resnet18, "resnet34":models.resnet34,
+            "resnet50":models.resnet50,"resnet101":models.resnet101,
+            "resnet152":models.resnet152, "resnext50":models.resnext50_32x4d,
+            "resnext101":models.resnext101_32x8d}
 
 class ResBase(nn.Module):
     def __init__(self, name, num_classes):
