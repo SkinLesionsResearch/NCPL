@@ -3,7 +3,7 @@ import pandas as pd
 
 def process_file_two_cate(base_path, src_file_path, target_file_path):
     def process_img_path(row):
-        path = "./" + base_path + "/" + row.split("\\")[5]
+        path = base_path + "/" + row.split("\\")[5]
         return path
 
     def process_label(label):
@@ -19,7 +19,7 @@ def process_file_two_cate(base_path, src_file_path, target_file_path):
 
 def process_file(base_path, src_file_path, target_file_path):
     def process_img_path(row):
-        path = "./" + base_path + "/" + row.split("\\")[5]
+        path = base_path + "/" + row.split("\\")[5]
         return path
 
     def process_label(label):

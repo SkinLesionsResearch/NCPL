@@ -25,6 +25,7 @@ def get_test_data(loader, net):
     _, predict = torch.max(all_output, 1)
     return all_features, all_output, all_label, predict
 
+
 def get_metrics(logits, y_true, y_predict):
     class_num = len(np.unique(y_true))
 

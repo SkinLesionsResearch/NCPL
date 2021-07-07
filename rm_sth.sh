@@ -6,3 +6,4 @@ rm -rf results
 rm -rf checkpoints
 rm_exist tb.log
 rm_exist run.log
+rm_exist chain.log

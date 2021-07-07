@@ -66,6 +66,8 @@ def data_load(args):
     return dset_loaders
 
 
+# get the samples whose confident level(probs predicted by the initial step model)
+# larger than a threshold
 def obtain_confident_loader(loader, net, args):
     start_test = True
     with torch.no_grad():
@@ -90,6 +92,7 @@ def obtain_confident_loader(loader, net, args):
                 all_index = torch.cat((all_index, indices), 0)
 
     all_output = nn.Softmax(dim=1)(all_output)
+    # torch.max(_, 1): get the max number and corresponding indices for each line(dim==1)
     prob, predict = torch.max(all_output, 1)
     confident_indices = all_index[prob > args.threshold]
 
@@ -108,6 +111,7 @@ def obtain_confident_loader(loader, net, args):
     # Create Confident Dataloader
     train_u_txt = open(
         osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
+    # get the samples which is confident samples to make labels
     dset = ImageList_confident(
         [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), \
         real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
@@ -223,11 +227,20 @@ def train_source(args):
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
                     .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy,
                             kappa, sensitivity, specificity, roc_auc)
+                log_str_report = 'Report:{:.2f}%,{:.4f},{:.4f},{:.4f},{:.4f}' \
+                    .format(accuracy, kappa, sensitivity, specificity, roc_auc)
+                args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
+                args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(
                     epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
+                args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
+                args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
+                log_str_report = 'Report:{:.2f}%,{:.4f}' \
+                    .format(accuracy, kappa)
 
             args.out_file.write(log_str + '\n')
+            args.out_file.write(log_str_report + '\n')
             args.out_file.flush()
             print(log_str + '\n')
             if args.is_save:
@@ -255,7 +268,10 @@ def print_args(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
     parser.add_argument('--name', type=str, default="afm-resnet", help='experiment name')
-    parser.add_argument('--src-dset-path', type=str, default='./data/semi_processed', help='source dataset path')
+    parser.add_argument('--src-dset-path', type=str,
+                        default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data'
+                                '/semi_processed_absolute',
+                        help='source dataset path')
     parser.add_argument('--gpu_ids', type=str, nargs='?', default='0,1,2,3,4,5,6,7', help="device id to run")
     # parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help="device id to run")
     parser.add_argument('--labeled_num', type=int, default=500,
@@ -287,16 +303,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
-    args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive' \
-                  + str(args.weight_naive) + '_afm' + str(args.weight_afm) + '_u' + str(args.weight_u)
+    args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
+                  + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
     if not osp.exists(args.output_dir_train):
         os.makedirs(args.output_dir_train)
 
-    args.writer = SummaryWriter(f"results/{args.name}")
-
+    args.output_dir_train_tb = os.path.join('./results/', args.net + args.suffix)
+    args.writer = SummaryWriter(args.output_dir_train_tb)
     args.out_file = open(osp.join(args.output_dir_train, 'log.txt'), 'w')
     args.out_file.write(print_args(args) + '\n')
     args.out_file.flush()
