@@ -303,15 +303,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
-    args.suffix = '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
+    args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
                   + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
-    args.output_dir_train = os.path.join('./ckps/', args.net + args.suffix)
+    args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
     if not osp.exists(args.output_dir_train):
         os.makedirs(args.output_dir_train)
 
-    args.output_dir_train_tb = os.path.join('./results/', args.net + args.suffix)
+    args.output_dir_train_tb = os.path.join('./results/', args.net + "_" + args.suffix)
     args.writer = SummaryWriter(args.output_dir_train_tb)
     args.out_file = open(osp.join(args.output_dir_train, 'log.txt'), 'w')
     args.out_file.write(print_args(args) + '\n')
