@@ -16,26 +16,21 @@ run `pip3 install -r requirements.txt` to install all the dependencies.
 ## Data Preparation:
 Downloads the HAM10000 dataset and store it in the folder "data/semi_processed"
 
+- ** Data Path **
 
 The labeled training data subdirectory is the "data/semi_processed/[Num of Samples]/train_labeled.txt", the Num_of_Samples is set at [500, 1000, 1500, 2000, 2500]
 
-
 The unlabeled training data subdirectory is the "data/semi_processed/[Num of Samples]/train_unlabeled.txt", the Num_of_Samples is set at [500, 1000, 1500, 2000, 2500]
-
 
 The testing data subdirectory is the "data/semi_processed/test.txt"
 
-
-The txt file for both training and testing data is as following format:
-
+- ** File Format **: The txt file for both training and testing data is as following format
 
 "./../ups/data_ham10000/datasets/ISIC_0030828.jpg 4",
 
+The first "./../ups/data_ham10000/datasets/ISIC_0030828.jpg" is the path to image on dist,
 
-the first "./../ups/data_ham10000/datasets/ISIC_0030828.jpg" is the path to image on dist,
-
-
-the second "4" is the corresponding label.
+The second "4" is the corresponding label.
 
 ## Training
 ```shell
