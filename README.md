@@ -55,6 +55,6 @@ python -u ./train.py \
 tensorboard --logdir=results
 ```
 ## System Architecture
-
+![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/IMG/PLGS.png)
 ## Results
 Ready to publish afterwards.
