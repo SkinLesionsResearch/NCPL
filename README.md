@@ -1,4 +1,4 @@
-# SemiSkinCancer
+# NCPL system
 Trying to handle ham10000 dataset with semi-supervised learning methods for skin lesion image classification.
 
 ## Abount:
