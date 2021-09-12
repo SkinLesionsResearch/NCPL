@@ -1,22 +1,25 @@
 import argparse
 import os, sys
+os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
+sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
+print(os.getcwd())
 import os.path as osp
 import torchvision
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from itertools import cycle
+# import torch.nn as nn
+# import torch.optim as optim
+# from itertools import cycle
 from torchvision import transforms
-import network, loss
+# import network, loss
 from torch.utils.data import DataLoader
 from data_list import ImageList, ImageList_idx
 import random, pdb, math, copy
 from evaluation.draw import draw_ROC, draw_TSNE, draw_cm
 from evaluation.metrics import get_metrics, get_test_data
 import matplotlib.pyplot as plt
-from object.transforms import image_test
-from object import utils
+from transforms import image_test
+import utils
 
 plt.rc('font', family='Times New Roman')
 
@@ -59,7 +62,8 @@ def print_args(args):
 def draw_heatmap(model, img_dir, save_dir, transform=None, visual_heatmap=False):
     for file in os.listdir(img_dir):
         if os.path.isfile(os.path.join(img_dir, file)):
-            draw_CAM(model, os.path.join(img_dir, file), save_dir, transform, visual_heatmap)
+            pass
+            # draw_CAM(model, os.path.join(img_dir, file), save_dir, transform, visual_heatmap)
 
 
 def test_target(args):
@@ -73,11 +77,13 @@ def test_target(args):
     net = utils.get_model(args.net, args.num_classes)
 
     args.modelpath = args.output_dir_train + '/best_params.pt'
+    print(args.modelpath)
     net.load_state_dict(torch.load(args.modelpath))
 
     net.eval()
 
     if not args.draw_cam:
+        print("run not draw_cam")
         dset_loaders = data_load(args)
         features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
         accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
@@ -95,15 +101,18 @@ def test_target(args):
         print(log_str)
         print(report)
     else:
+        print("run draw_cam")
         draw_heatmap(net, args.img_dir, args.save_dir, image_test(), True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='oral_cancer')
     parser.add_argument('--gpu_id', type=str, nargs='?', default='0', help="device id to run")
-    parser.add_argument('--batch_size', type=int, default=64, help="batch_size")
+    parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
-    parser.add_argument('--worker', type=int, default=4, help="number of workers")
+    parser.add_argument('--worker', type=int, default=12, help="number of workers")
     parser.add_argument('--dir', type=str, default='./ckps/')
+    parser.add_argument('--subDir', type=str, default='resnet50_sev_cates_2500_0.99_naive_0_afm_0.7_u_0.3')
+    parser.add_argument('--dset_path', type=str, default='./data/semi_processed')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
     parser.add_argument('--which', type=str, default='one', choices=['one', 'all'])
     parser.add_argument('--draw_cam', type=bool, default=False)
@@ -114,11 +123,13 @@ if __name__ == "__main__":
     args.label_names = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
 
     if args.which == 'one':
-        args.net = osp.basename(args.dir).split('_')[0]
+        args.net = osp.basename(args.subDir).split('_')[0]
         # torch.backends.cudnn.deterministic = True
+        print(args.dir)
 
-        args.output_dir_train = os.path.join('./ckps', args.dir)
-        args.output_dir = os.path.join('./test', args.dir)
+        args.output_dir_train = os.path.join(args.dir, args.subDir)
+        print(args.output_dir_train)
+        args.output_dir = os.path.join('../test', args.output_dir_train)
 
         if not osp.exists(args.output_dir):
             os.system('mkdir -p ' + args.output_dir)
@@ -129,19 +140,15 @@ if __name__ == "__main__":
         args.out_file.write(print_args(args) + '\n')
         args.out_file.flush()
 
-        args.dset_path = './data/semi_processed'
-
         test_target(args)
 
     if args.which == 'all':
-        args.dir = os.path.join('./ckps/', args.dir)
         for dir in os.listdir(args.dir):
-
             args.net = dir.split('_')[0]
             # torch.backends.cudnn.deterministic = True
 
             args.output_dir_train = os.path.join(args.dir, dir)
-            args.output_dir = os.path.join('./test/0616', dir)
+            args.output_dir = os.path.join('./test', args.output_dir_train)
 
             if not osp.exists(args.output_dir):
                 os.system('mkdir -p ' + args.output_dir)
@@ -151,7 +158,5 @@ if __name__ == "__main__":
             args.out_file = open(osp.join(args.output_dir, 'log.txt'), 'w')
             args.out_file.write(print_args(args) + '\n')
             args.out_file.flush()
-
-            args.dset_path = './data/semi_processed'
 
             test_target(args)
