@@ -1,7 +1,7 @@
 current_date_time=$(date +%Y%m%d%H%M%S)
 touch run.log
 echo "start_time: ""$current_date_time" >> run.log
-cp ./object/train.py .
+# cp ./object/train.py .
 
 nohup python -u ./train.py \
 --src-dset-path './data/semi_processed_two_cates' \

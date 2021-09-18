@@ -1,5 +1,7 @@
 import argparse
-import os
+import os,sys
+os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
+sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 import os.path as osp
 import numpy as np
 import torch
