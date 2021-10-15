@@ -11,47 +11,58 @@ function run_check() {
 }
 
 cp ./object/train.py .
-
+:<<comment
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 500 \
+--net "inception" \
+--threshold 0 \
 --num_classes 7 \
---suffix 'sev_cates'
+--suffix '_t_0'
 
-run_check 500_two_cate
+run_check 500_t_0
 sleep 5s
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 1000 \
+--net "inception" \
+--threshold 0 \
 --num_classes 7 \
---suffix 'sev_cates'
+--suffix '_t_0'
 
-run_check 1000_two_cate
+run_check 1000_t_0
 sleep 5s
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 1500 \
+--threshold 0 \
+--net "inception" \
 --num_classes 7 \
---suffix 'sev_cates'
+--suffix '_t_0'
 
-run_check 1500_two_cate
+run_check 1500_t_0
 sleep 5s
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 2000 \
+--net "inception" \
+--threshold 0 \
 --num_classes 7 \
---suffix 'sev_cates'
+--suffix '_t_0'
 
-run_check 2000_two_cate
+run_check 2500_t_0
 sleep 5s
+comment
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 2500 \
+--net "inception" \
 --num_classes 7 \
---suffix 'sev_cates'
+--threshold 0 \
+--suffix '_t_0'
 
-run_check 2500_two_cate
+run_check 2500_t_0
