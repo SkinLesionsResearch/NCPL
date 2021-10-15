@@ -1,6 +1,7 @@
 nohup.out
 .idea
 ckps
+ckps_bl
 test
 __pycache__
 *.log
