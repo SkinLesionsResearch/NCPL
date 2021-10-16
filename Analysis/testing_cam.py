@@ -15,9 +15,9 @@ LABELS_URL = 'https://s3.amazonaws.com/outcome-blog/imagenet/labels.json'
 IMG_URL = 'http://media.mlive.com/news_impact/photo/9933031-large.jpg'
 
 model = torch.load("../ckps/resnet50_sev_cates_weight_500_0.99_naive_0_afm_1.0_u_0.0/best_params.pt")
-print(model)
+# print(model)
 
-exit()
+# exit()
 # 使用本地的图片和下载到本地的labels.json文件
 # LABELS_PATH = "labels.json"
 # networks such as googlenet, resnet, densenet already use global average pooling at the end, so CAM could be used directly.
