@@ -10,8 +10,7 @@ function run_check() {
 	fi 
 }
 
-cp ./object/train.py .
-
+:<<comment
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 500 \
@@ -47,8 +46,9 @@ python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py
 
 run_check 2000_two_cate
 sleep 5s
+comment
 
-python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
+python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 2500 \
 --num_classes 7 \

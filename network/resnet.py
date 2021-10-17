@@ -39,7 +39,9 @@ class ResBase(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        self.ori_features_ly4 = x
         x = self.avgpool(x)
+        self.ori_features_weight = x
         features = x.view(x.size(0), -1)
         # features = self.fc(x)
         logits = self.classifier(features)
@@ -65,7 +67,8 @@ if __name__ == '__main__':
     import torch
     model = ResBase('resnet50', 2).cuda()
     rand = torch.rand(1, 3, 256, 256).cuda()
-    cam, _, _ = model(rand)
-    print(cam.shape)
+    # cam, _, _ = model(rand)
+    model(rand)
+    # print(cam.shape)
 
 
