@@ -7,3 +7,4 @@ __pycache__
 *.log
 data_ham10000
 results
+*res*

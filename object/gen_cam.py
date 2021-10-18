@@ -93,7 +93,7 @@ def get_data_loaders(args, test_fname):
     ## prepare data
     dsets = {}
     dset_loaders = {}
-    test_txt = open(os.path.join(args.dset_path, test_fname)).readlines()
+    test_txt = open(args.test_img_dir).readlines()
     dsets[test_fname] = ImageListWithPath(test_txt, args, transform=image_test())
     dset_loaders[test_fname] = DataLoader(dsets[test_fname], batch_size=args.batch_size, shuffle=True,
                                           num_workers=args.worker, drop_last=False)
@@ -118,7 +118,6 @@ def target_logic(args, suffix):
     logits = logits[0]
     h_x = F.softmax(logits, dim=0).data.squeeze()
     probs, idx = torch.sort(h_x)
-    probs = probs.detach().numpy()
     idx = idx.numpy()
 
     model_state_dict = net.state_dict()
@@ -136,49 +135,46 @@ def target_logic(args, suffix):
     heatmap = cv2.applyColorMap(cv2.resize(CAMs[0], (width, height)), cv2.COLORMAP_JET)
     img_cam = heatmap * 0.5 + img_ori * 0.5
     img_name = img_path.split("/")[-1].split(".")[0]
-    cv2.imwrite(img_name + ".jpg", img_ori)
-    cv2.imwrite(img_name + "_" + suffix + "_cam.jpg", img_cam)
+    cv2.imwrite(os.path.join(args.save_dir, (img_name + ".jpg")), img_ori)
+    cv2.imwrite(os.path.join(args.save_dir, (img_name + "_" + suffix + "_cam.jpg")), img_cam)
 
 
 def gen_path():
-    args.net = os.path.basename(args.subDir).split('_')[0]
+    args.net = os.path.basename(args.sub_dir).split('_')[0]
     args.output_dir_train = ""
     args.output_dir_train = os.path.join(args.output_dir_train, args.dir)
-    args.output_dir_train = os.path.join(args.output_dir_train, args.subDir)
+    args.output_dir_train = os.path.join(args.output_dir_train, args.sub_dir)
     args.model_path = args.output_dir_train + '/best_params.pt'
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='oral_cancer')
-    parser.add_argument('--gpu_id', type=str, nargs='?', default='0', help="device id to run")
-    parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
+    parser.add_argument('--batch_size', type=int, default=1, help="batch_size")
     parser.add_argument('--num_classes', type=int, default=2, help="number of classes")
     parser.add_argument('--worker', type=int, default=12, help="number of workers")
     parser.add_argument('--dir', type=str, default='./ckps/')
-    parser.add_argument('--subDir', type=str, default='resnet50_tc_bcc_2500_0.99_naive_0_afm_0.7_u_0.3')
-    parser.add_argument('--output_dir_train', type=str,
-                        default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer')
+    parser.add_argument('--sub_dir', type=str, default='resnet50_tc_bcc_2500_0.99_naive_0_afm_0.7_u_0.3')
+    parser.add_argument('--test_img_dir', type=str, default='./data/semi_processed/test_cam.txt')
     parser.add_argument('--dset_path', type=str, default='./data/semi_processed_bcc')
-    parser.add_argument('--seed', type=int, default=2021, help="random seed")
-    parser.add_argument('--which', type=str, default='one', choices=['one', 'all'])
-    parser.add_argument('--draw_cam', type=bool, default=False)
-    parser.add_argument('--img_dir', type=str, default=None)
-    parser.add_argument('--save_dir', type=str, default=None)
+    parser.add_argument('--save_dir', type=str, default="cam_res")
 
     args = parser.parse_args()
+
+    if not os.path.exists(args.save_dir):
+        os.mkdir(args.save_dir)
 
     args.dset_path = './data/semi_processed_bcc'
 
     # gen imgs for the ncpl
     args.dir = "ckps"
-    args.subDir = "resnet50_tc_bcc_2500_0.99_naive_0_afm_0.7_u_0.3"
+    args.sub_dir = "resnet50_tc_bcc_2500_0.99_naive_0_afm_0.7_u_0.3"
 
     gen_path()
     target_logic(args, "ncpl")
 
     # gen imgs for the baseline resnet50
     args.dir = "ckps_bl"
-    args.subDir = "resnet50_tc_bcc_2500_0.0_naive_0_afm_0.7_u_0.3"
+    args.sub_dir = "resnet50_tc_bcc_2500_0.0_naive_0_afm_0.7_u_0.3"
 
     gen_path()
     target_logic(args, "bl")
