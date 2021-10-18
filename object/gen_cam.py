@@ -89,21 +89,19 @@ def image_test(resize_size=256, crop_size=224, alexnet=False):
     ])
 
 
-def get_data_loaders(args, test_fname):
+def get_data_loader(args):
     ## prepare data
-    dsets = {}
-    dset_loaders = {}
     test_txt = open(args.test_img_dir).readlines()
-    dsets[test_fname] = ImageListWithPath(test_txt, args, transform=image_test())
-    dset_loaders[test_fname] = DataLoader(dsets[test_fname], batch_size=args.batch_size, shuffle=True,
-                                          num_workers=args.worker, drop_last=False)
+    dsets = ImageListWithPath(test_txt, args, transform=image_test())
+    dset_loader = DataLoader(dsets, batch_size=args.batch_size, shuffle=True,
+                             num_workers=args.worker, drop_last=False)
 
-    return dset_loaders
+    return dset_loader
 
 
 def target_logic(args, suffix):
     args.batch_size = 32
-    test_loader = get_data_loaders(args, "test_cam_1.txt")["test_cam_1.txt"]
+    test_loader = get_data_loader(args)
 
     net = utils.get_model(args.net, args.num_classes)
     print(args.model_path)
