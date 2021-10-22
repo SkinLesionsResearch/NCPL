@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
         args.output_dir_train = os.path.join(args.dir, args.subDir)
         print(args.output_dir_train)
-        args.output_dir = os.path.join('../test', args.output_dir_train)
+        args.output_dir = os.path.join('test', args.output_dir_train)
 
         if not osp.exists(args.output_dir):
             os.system('mkdir -p ' + args.output_dir)
