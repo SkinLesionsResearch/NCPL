@@ -124,9 +124,13 @@ if __name__ == "__main__":
     parser.add_argument('--draw_cam', type=bool, default=False)
     parser.add_argument('--img_dir', type=str, default=None)
     parser.add_argument('--save_dir', type=str, default=None)
+    parser.add_argument('--bin_class', type=str, default=None)
 
     args = parser.parse_args()
-    args.label_names = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
+    if args.num_classes == 2:
+        args.label_names = [("not " + args.bin_class), args.bin_class]
+    else:
+        args.label_names = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
 
     if args.which == 'one':
         args.net = osp.basename(args.subDir).split('_')[0]
