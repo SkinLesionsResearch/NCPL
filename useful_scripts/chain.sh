@@ -58,21 +58,11 @@ sleep 5s
 comment
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
---src-dset-path './data/semi_processed_bcc' \
---labeled_num 2500 \
---net "resnet50" \
---num_classes 2 \
+--src-dset-path './data/semi_processed' \
+--labeled_num 1500 \
+--net "senet" \
+--num_classes 7 \
 --threshold 0 \
---suffix 'tc_bcc'
+--suffix 'tm'
 
-run_check 2500_res_bcc
-
-python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
---src-dset-path './data/semi_processed_mel' \
---labeled_num 2500 \
---net "resnet50" \
---num_classes 2 \
---threshold 0 \
---suffix 'tc_mel'
-
-run_check 2500_res_mel
+run_check 2500_senet

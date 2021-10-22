@@ -47,7 +47,8 @@ def data_load(args):
     dsets = {}
     dset_loaders = {}
     test_txt = open(osp.join(args.dset_path, 'test.txt')).readlines()
-    dsets["test"] = ImageList(test_txt, args, transform=image_test())
+    dsets["test"] = ImageList(test_txt, args, transform=(
+                                            image_test(299) if args.subDir[0:5] == "senet" else image_test()))
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=False)
 

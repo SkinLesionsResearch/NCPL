@@ -38,8 +38,11 @@ def data_load(args):
     train_u_txt = open(osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
     test_txt = open(osp.join(args.src_dset_path, 'test.txt')).readlines()
 
-    dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train())
-    dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train())
+    image_train_transform = image_train(resize_size=299) if args.net[0:5] == "senet" else image_train()
+    image_test_transform = image_test(resize_size=299) if args.net[0:5] == "senet" else image_test()
+
+    dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train_transform)
+    dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train_transform)
     if args.imb:
         dset_loaders["train_x"] = DataLoader(dsets["train_x"], batch_size=args.batch_size,
                                              sampler=ImbalancedDatasetSampler(dsets["train"]),
@@ -51,7 +54,7 @@ def data_load(args):
     dset_loaders["train_u"] = DataLoader(dsets["train_u"], batch_size=args.batch_size, shuffle=False,
                                          num_workers=args.worker, drop_last=False)
 
-    dsets["test"] = ImageList(test_txt, args, transform=image_test())
+    dsets["test"] = ImageList(test_txt, args, transform=image_test_transform)
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=True)
     print('Labeled training Data Count:', len(dsets["train_x"]), ', Distribution:')
@@ -72,6 +75,7 @@ def data_load(args):
 # larger than a threshold
 def obtain_confident_loader(loader, net, args):
     start_test = True
+    image_train_transform = image_train(resize_size=299) if args.net[0:5] == "senet" else image_train()
     with torch.no_grad():
         iter_test = iter(loader)
         for _ in range(len(loader)):
@@ -116,7 +120,7 @@ def obtain_confident_loader(loader, net, args):
     # get the samples which is confident samples to make labels
     dset = ImageList_confident(
         [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), \
-        real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
+        real_labels=all_label[confident_indices].int().numpy(), transform=image_train_transform)
     confident_dset_loader = DataLoader(dset, batch_size=args.batch_size, shuffle=True,
                                        num_workers=args.worker, drop_last=True)
 
