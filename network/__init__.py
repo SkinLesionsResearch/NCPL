@@ -5,6 +5,7 @@ from .vgg import *
 from .googlenet import *
 from .alexnet import *
 from .senet import *
+from .ran.residual_attention_network import *
 
 __factory = {
     'ResBase': ResBase,
@@ -12,5 +13,6 @@ __factory = {
     'VGGBase': VGGBase,
     'GoogLeNet': GoogLeNet,
     'AlexNet': AlexNet,
-	'SEInception3': SEInception3
+    'SEInception3': SEInception3,
+    'ran': ResidualAttentionModel_92
 }

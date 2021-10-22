@@ -38,8 +38,15 @@ def data_load(args):
     train_u_txt = open(osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
     test_txt = open(osp.join(args.src_dset_path, 'test.txt')).readlines()
 
-    image_train_transform = image_train(resize_size=299) if args.net[0:5] == "senet" else image_train()
-    image_test_transform = image_test(resize_size=299) if args.net[0:5] == "senet" else image_test()
+    image_train_transform = image_train()
+    image_test_transform = image_test()
+
+    if args.net[0:5] == "senet":
+        image_train_transform = image_train(299)
+        image_test_transform = image_test(299)
+    elif args.net[0:3] == "ran":
+        image_train_transform = image_train(32)
+        image_test_transform = image_test(32)
 
     dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train_transform)
     dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train_transform)
@@ -75,7 +82,12 @@ def data_load(args):
 # larger than a threshold
 def obtain_confident_loader(loader, net, args):
     start_test = True
-    image_train_transform = image_train(resize_size=299) if args.net[0:5] == "senet" else image_train()
+    image_train_transform = image_train()
+    if args.net[0:5] == "senet":
+        image_train_transform = image_train(299)
+    elif args.net[0:3] == "ran":
+        image_train_transform = image_train(32)
+
     with torch.no_grad():
         iter_test = iter(loader)
         for _ in range(len(loader)):
