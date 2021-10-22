@@ -1,5 +1,6 @@
 nohup.out
 .idea
+cam_res/*
 ckps*
 test
 __pycache__
