@@ -142,6 +142,7 @@ def train_source(args):
     optimizer = op_copy(optimizer)
 
     acc_init = 0
+    auc_init = 0
     iter_per_epoch = len(dset_loaders["train_x"])
     max_iter = args.max_epoch * len(dset_loaders["train_x"])
     interval_iter = max_iter // 10
@@ -246,6 +247,9 @@ def train_source(args):
             args.out_file.flush()
             print(log_str + '\n')
             if args.is_save:
+                if args.num_classes == 2:
+                    if roc_auc >= auc_init:
+                        torch.save(net.module.state_dict(), osp.join(args.output_dir_train, "best_params_auc.pt"))
                 if accuracy >= acc_init:
                     acc_init = accuracy
                     torch.save(net.module.state_dict(), osp.join(args.output_dir_train, "best_params.pt"))
