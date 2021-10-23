@@ -247,12 +247,13 @@ def train_source(args):
             args.out_file.flush()
             print(log_str + '\n')
             if args.is_save:
-                if args.num_classes == 2:
+                if args.num_classes != 100:
                     if roc_auc >= auc_init:
                         torch.save(net.module.state_dict(), osp.join(args.output_dir_train, "best_params_auc.pt"))
-                if accuracy >= acc_init:
-                    acc_init = accuracy
-                    torch.save(net.module.state_dict(), osp.join(args.output_dir_train, "best_params.pt"))
+                if args.num_classes != 100:
+                    if accuracy >= acc_init:
+                        acc_init = accuracy
+                        torch.save(net.module.state_dict(), osp.join(args.output_dir_train, "best_params.pt"))
 
             net.train()
 
