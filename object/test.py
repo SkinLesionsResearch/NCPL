@@ -81,8 +81,10 @@ def test_target(args):
 
     ## set base network
     net = utils.get_model(args.net, args.num_classes)
-
-    args.modelpath = args.output_dir_train + '/best_params.pt'
+    if args.num_classes == 2:
+        args.modelpath = args.output_dir_train + '/best_params_auc.pt'
+    else:
+        args.modelpath = args.output_dir_train + '/best_params.pt'
     print(args.modelpath)
     net.load_state_dict(torch.load(args.modelpath))
 
