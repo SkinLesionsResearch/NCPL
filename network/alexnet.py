@@ -7,11 +7,14 @@ class AlexNet(nn.Module):
     self.model_alexnet = models.alexnet(pretrained=True)
     in_features = self.model_alexnet.classifier[6].in_features
     self.model_alexnet.classifier = self.model_alexnet.classifier[:-1]
-    self.fc = nn.Linear(in_features, num_classes)
+    self.classifier = nn.Sequential(
+        nn.ReLU(inplace=False),
+        nn.Linear(in_features, num_classes),
+    )
 
   def forward(self, x):
       features = self.model_alexnet(x)
-      logits = self.fc(features)
+      logits = self.classifier(features)
       return features, logits
 
 if __name__ == '__main__':
@@ -20,4 +23,4 @@ if __name__ == '__main__':
     import torch
     rand = torch.rand(3, 3, 256, 256).cuda()
     out = model(rand)
-    print(out[0].shape)
+    print(out[0].shape, ", ", out[1].shape)

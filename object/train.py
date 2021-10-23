@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from object.data_list import ImageList, ImageList_idx, ImageList_confident
 import json
 import random
-from evaluation.metrics import get_metrics, get_test_data
+from evaluation.metrics import get_metrics_sev_class, get_test_data
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
@@ -237,20 +237,24 @@ def train_source(args):
         if iter_num % interval_iter == 0 or iter_num == max_iter:
             net.eval()
             features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
-            accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
+            accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
+                                                            get_metrics_sev_class(logits, y_true, y_predict)
 
             if args.num_classes == 2:
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},' \
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
+                          'F1 = {:.4f}, Precision = {:.4f}, Recall = {:.4f}' \
                     .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy,
-                            kappa, sensitivity, specificity, roc_auc)
+                            kappa, sensitivity, specificity, roc_auc, f1, precision, recall)
                 log_str_report = 'Report:{:.2f}%,{:.4f},{:.4f},{:.4f},{:.4f}' \
                     .format(accuracy, kappa, sensitivity, specificity, roc_auc)
                 args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
-                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(
-                    epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
+                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},' \
+                          'F1 = {:.4f}, Precision = {:.4f}, Recall = {:.4f}' \
+                        .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa,
+                                f1, precision, recall)
                 args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
                 log_str_report = 'Report:{:.2f}%,{:.4f}' \
@@ -305,7 +309,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
     parser.add_argument('--step_size', type=int, default=15, help="batch_size")
     parser.add_argument('--worker', type=int, default=4, help="number of workers")
-    parser.add_argument('--lr', type=float, default=1e-2, help="learning rate")
+    parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")
     parser.add_argument('--net', type=str, default='resnet50')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 

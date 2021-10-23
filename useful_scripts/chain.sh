@@ -60,7 +60,7 @@ comment
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 2500 \
---net "vgg11" \
+--net "ale" \
 --num_classes 7 \
 --threshold 0 \
 --suffix 'tm'
