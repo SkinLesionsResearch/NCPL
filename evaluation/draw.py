@@ -101,8 +101,8 @@ def draw_ROC(logits, y_true, label_names, save_path, title=None):
 
     else:
         lw = 2
-        plt.plot(fpr[0], tpr[0], color='darkorange',
-                 lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[0])
+        plt.plot(fpr[1], tpr[1], color='darkorange',
+                 lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[1])
         plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
 
     plt.xlim([0.0, 1.0])
