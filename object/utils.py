@@ -2,7 +2,6 @@ import network
 
 
 def get_model(net, num_classes):
-    print(net[0:4], ", ", num_classes)
     if net[0:3] == 'res':
         return network.ResBase(net, num_classes).cuda()
     elif net[0:3] == 'vgg':
@@ -13,10 +12,6 @@ def get_model(net, num_classes):
         return network.GoogLeNet(num_classes).cuda()
     elif net[0:3] == 'ale':
         return network.AlexNet(num_classes).cuda()
-    elif net[0:5] == 'senet':
-        return network.SEInception3(num_classes).cuda()
-    elif net[0:3] == 'ran':
-        return network.ResidualAttentionModel_92_32input(num_classes).cuda()
 
 
 def lr_scheduler(optimizer, iter_num, max_iter, gamma=10, power=0.75):

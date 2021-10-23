@@ -47,13 +47,7 @@ def data_load(args):
     dsets = {}
     dset_loaders = {}
     test_txt = open(osp.join(args.dset_path, 'test.txt')).readlines()
-    image_test_transform = image_test()
-    if args.net[0:5] == "senet":
-        image_test_transform = image_test(299)
-    elif args.net[0:3] == "ran":
-        image_test_transform = image_test(32)
-
-    dsets["test"] = ImageList(test_txt, args, transform=image_test_transform)
+    dsets["test"] = ImageList(test_txt, args, transform=image_test())
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=False)
 
@@ -124,13 +118,9 @@ if __name__ == "__main__":
     parser.add_argument('--draw_cam', type=bool, default=False)
     parser.add_argument('--img_dir', type=str, default=None)
     parser.add_argument('--save_dir', type=str, default=None)
-    parser.add_argument('--bin_class', type=str, default=None)
 
     args = parser.parse_args()
-    if args.num_classes == 2:
-        args.label_names = [("not " + args.bin_class), args.bin_class]
-    else:
-        args.label_names = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
+    args.label_names = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
 
     if args.which == 'one':
         args.net = osp.basename(args.subDir).split('_')[0]
@@ -139,7 +129,7 @@ if __name__ == "__main__":
 
         args.output_dir_train = os.path.join(args.dir, args.subDir)
         print(args.output_dir_train)
-        args.output_dir = os.path.join('test', args.output_dir_train)
+        args.output_dir = os.path.join('../test', args.output_dir_train)
 
         if not osp.exists(args.output_dir):
             os.system('mkdir -p ' + args.output_dir)
