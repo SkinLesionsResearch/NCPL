@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 from object.data_list import ImageList, ImageList_idx, ImageList_confident
 import json
 import random
-from evaluation.metrics import get_metrics, get_test_data
+from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
@@ -223,9 +223,9 @@ def train_source(args):
         if iter_num % interval_iter == 0 or iter_num == max_iter:
             net.eval()
             features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
-            accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
 
             if args.num_classes == 2:
+                accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},' \
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
                     .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy,
@@ -235,12 +235,18 @@ def train_source(args):
                 args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
-                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},'.format(
-                    epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa)
+                accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
+                                                                    get_metrics_sev_class(logits, y_true, y_predict)
+                log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f}, ' \
+                          'F1 = {:.4f}, Recall = {:.4f}, Precision = {:.4f}'.format(
+                    epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, f1, precision, recall)
                 args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
-                log_str_report = 'Report:{:.2f}%,{:.4f}' \
-                    .format(accuracy, kappa)
+                args.writer.add_scalar("test/2.F1", f1, args.num_eval)
+                args.writer.add_scalar("test/2.Precision", precision, args.num_eval)
+                args.writer.add_scalar("test/2.Recall", recall, args.num_eval)
+                log_str_report = 'Report:{:.2f}%,{:.4f},{:.4f},{:.4f},{:.4f}' \
+                    .format(accuracy, kappa, f1, precision, recall)
 
             args.out_file.write(log_str + '\n')
             args.out_file.write(log_str_report + '\n')

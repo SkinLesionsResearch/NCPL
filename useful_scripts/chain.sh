@@ -49,10 +49,9 @@ sleep 5s
 comment
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
---src-dset-path './data/semi_processed_mel' \
+--src-dset-path './data/semi_processed' \
 --labeled_num 2500 \
---net 'resnet50' \
---num_classes 2 \
---suffix 'tc_mel'
+--num_classes 7 \
+--suffix 'mc_base'
 
 run_check 2500_two_cate

@@ -1,5 +1,6 @@
 import argparse
 import os, sys
+
 os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 print(os.getcwd())
@@ -16,17 +17,19 @@ from torch.utils.data import DataLoader
 from data_list import ImageList, ImageList_idx
 import random, pdb, math, copy
 from evaluation.draw import draw_ROC, draw_TSNE, draw_cm
-from evaluation.metrics import get_metrics, get_test_data
+from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
 import matplotlib.pyplot as plt
 from transforms import image_test
 import utils
 
 plt.rc('font', family='Times New Roman')
 
+
 def op_copy(optimizer):
     for param_group in optimizer.param_groups:
         param_group['lr0'] = param_group['lr']
     return optimizer
+
 
 def image_test(resize_size=256, crop_size=224, alexnet=False):
     if not alexnet:
@@ -59,17 +62,12 @@ def data_load(args):
 
     return dset_loaders
 
+
 def print_args(args):
     s = "==========================================\n"
     for arg, content in args.__dict__.items():
         s += "{}:{}\n".format(arg, content)
     return s
-
-def draw_heatmap(model, img_dir, save_dir, transform=None, visual_heatmap=False):
-    for file in os.listdir(img_dir):
-        if os.path.isfile(os.path.join(img_dir, file)):
-            pass
-            # draw_CAM(model, os.path.join(img_dir, file), save_dir, transform, visual_heatmap)
 
 
 def test_target(args):
@@ -90,27 +88,29 @@ def test_target(args):
 
     net.eval()
 
-    if not args.draw_cam:
-        print("run not draw_cam")
-        dset_loaders = data_load(args)
-        features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
-        accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
-        draw_ROC(logits, y_true, args.label_names, args.output_dir)
-        draw_cm(y_true, y_predict, args.label_names, args.output_dir)
-        draw_TSNE(features, y_true, args.label_names, args.output_dir)
-
-        log_str = '\nAccuracy = {:.2f}%, Kappa = {:.4f},' \
-                  ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}\n' \
-            .format(accuracy, kappa, sensitivity, specificity, roc_auc)
-
-        args.out_file.write(log_str)
-        args.out_file.write(report)
-        args.out_file.flush()
-        print(log_str)
-        print(report)
+    dset_loaders = data_load(args)
+    features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
+    if args.num_classes == 2:
+        accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
+                                                                get_metrics_sev_class(logits, y_true, y_predict)
     else:
-        print("run draw_cam")
-        draw_heatmap(net, args.img_dir, args.save_dir, image_test(), True)
+        accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
+                                                                get_metrics_sev_class(logits, y_true, y_predict)
+    draw_ROC(logits, y_true, args.label_names, args.output_dir)
+    draw_cm(y_true, y_predict, args.label_names, args.output_dir)
+    draw_TSNE(features, y_true, args.label_names, args.output_dir)
+
+    log_str = '\nAccuracy = {:.2f}%, Kappa = {:.4f},' \
+              ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}\n' \
+              ' F1 = {:.4f}, Recall = {:.4f}, Precision = {:.4f}' \
+        .format(accuracy, kappa, sensitivity, specificity, roc_auc, f1, recall, precision)
+
+    args.out_file.write(log_str)
+    args.out_file.write(report)
+    args.out_file.flush()
+    print(log_str)
+    print(report)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='oral_cancer')
@@ -123,7 +123,6 @@ if __name__ == "__main__":
     parser.add_argument('--dset_path', type=str, default='./data/semi_processed')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
     parser.add_argument('--which', type=str, default='one', choices=['one', 'all'])
-    parser.add_argument('--draw_cam', type=bool, default=False)
     parser.add_argument('--img_dir', type=str, default=None)
     parser.add_argument('--save_dir', type=str, default=None)
     parser.add_argument('--bin_class', type=str, default=None)

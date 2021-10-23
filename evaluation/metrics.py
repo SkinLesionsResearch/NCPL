@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from sklearn.metrics import confusion_matrix, cohen_kappa_score, classification_report, roc_auc_score
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 
 def get_test_data(loader, net):
@@ -24,6 +25,16 @@ def get_test_data(loader, net):
                 all_label = torch.cat((all_label, labels.float()), 0)
     _, predict = torch.max(all_output, 1)
     return all_features, all_output, all_label, predict
+
+
+def get_metrics_sev_class(logits, y_true, y_predict):
+    print(y_true[0])
+    print(y_predict[0])
+    f1 = f1_score(y_true, y_predict, average='weighted')
+    recall = recall_score(y_true, y_predict, average='weighted')
+    precision = precision_score(y_true, y_predict, average='weighted')
+    accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
+    return accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision
 
 
 def get_metrics(logits, y_true, y_predict):
