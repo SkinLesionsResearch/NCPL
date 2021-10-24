@@ -8,3 +8,6 @@ __pycache__
 data_ham10000
 results
 *res*
+useful_scripts/*/*generated*
+latex_generator/*.csv
+*.tex

@@ -26,7 +26,9 @@ def create_tabular(df):
             cur_row = [""] if i > 0 else [MultiRow(size=len(df_cur), data=num_labeled_cur)]
             cur_row.extend(list(df_cur.iloc[i, 1:]))
             tabular.add_row(cur_row)
-            tabular.add_hline() if i == len(df_cur) - 1 else tabular.add_hline(start=2, end=8)
+            # tabular.add_hline() if i == len(df_cur) - 1 else tabular.add_hline(start=2, end=8)
+            if i == len(df_cur) - 1:
+                tabular.add_hline()
     return tabular
 
 
