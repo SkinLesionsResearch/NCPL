@@ -18,7 +18,7 @@ def create_tabular(df):
                      NoEscape("F1-score"), "Recall", "Precision"])
     tabular.add_hline()
 
-    labeled_num_set = [500, 1000, 1500, 2000]
+    labeled_num_set = [500, 1000, 1500, 2000, 2500]
     for num_labeled_cur in labeled_num_set:
         df_cur = df_max_acc[df_max_acc["num_labeled"] == num_labeled_cur].reset_index(drop=True)
 

@@ -24,4 +24,9 @@ with open("chain.script.base.sh", "r") as f:
     base_script = f.read()
     with open("chain.generated.sh", "w") as out_f:
         out_f.write(base_script)
-        out_f.write(gen_exp_train_script())
+        out_f.write(gen_exp_train_script(labeled_num=1000, wafm=0.3, wu=0.7,
+                                         suffix="acfi_1000",
+                                         check_flag="run_check 1000_acfi_0307"))
+        out_f.write(gen_exp_train_script(labeled_num=1000, wafm=0.1, wu=0.9,
+                                         suffix="acfi_1000",
+                                         check_flag="run_check 1000_acfi_0109"))
