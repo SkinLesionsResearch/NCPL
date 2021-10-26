@@ -7,14 +7,14 @@ import os
 
 
 def create_tabular(df):
-    df_max_acc_idx = df.groupby(by=["num_labeled", "lambda_param", "w"])["Accuracy"].idxmax()
+    df_max_acc_idx = df.groupby(by=["num_labeled", "threshold"])["Accuracy"].idxmax()
     df_max_acc = df.iloc[df_max_acc_idx].reset_index(drop=True)
 
-    tabular = Tabular(table_spec="|c|c|c|l|l|l|l|l|")
+    tabular = Tabular(table_spec="|c|c|l|l|l|l|l|")
     tabular.add_hline()
 
     tabular.add_row(["The number of labeled samples",
-                     NoEscape("$\eta$"), NoEscape("$w$"), "Accuracy", "Kappa",
+                     NoEscape("$\sigma$"), "Accuracy", "Kappa",
                      NoEscape("F1-score"), "Recall", "Precision"])
     tabular.add_hline()
 
@@ -62,9 +62,8 @@ def fill_document(doc):
     obj.generate_tex("tabular.example")
 
 
-doc = Document('table.example')
-df = pd.read_csv('acfi_res.csv')
+df = pd.read_csv('plgs_res.csv')
 df["num_labeled"] = df["num_labeled"].astype(np.dtype("int64"))
 tabular = create_tabular(df)
-tabular.generate_tex('tabular.example')
-inplace_change("tabular.example.tex", "%", "")
+tabular.generate_tex('tabular.plgs.example')
+inplace_change("tabular.plgs.example.tex", "%", "")
