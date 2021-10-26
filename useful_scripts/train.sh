@@ -13,6 +13,7 @@ function run_check() {
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
 --src-dset-path './data/semi_processed' \
 --is_pretrained_loading True \
+--max_epoch 120 \
 --labeled_num 1000 \
 --threshold 0.99 \
 --weight-afm 0.5 \

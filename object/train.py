@@ -170,6 +170,7 @@ def train_source(args):
             inputs_x, labels_x = iter_x.next()
         inputs_x, labels_x = inputs_x.cuda(), labels_x.cuda()
 
+        confident_loader = None
         if iter_num == iter_per_epoch * args.start_u or epoch >= args.start_u:
             if iter_num % interval_iter == 0:
                 net.eval()
@@ -179,6 +180,8 @@ def train_source(args):
             try:
                 inputs_c, labels_c, real_c, _ = iter_c.next()
             except:
+                if confident_loader is None:
+                    confident_loader = obtain_confident_loader(dset_loaders["train_u"], net, args)
                 iter_c = iter(confident_loader)
                 inputs_c, labels_c, real_c, _ = iter_c.next()
 
