@@ -302,7 +302,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
     parser.add_argument('--step_size', type=int, default=15, help="batch_size")
     parser.add_argument('--worker', type=int, default=4, help="number of workers")
-    parser.add_argument('--lr', type=float, default=1e-2, help="learning rate")
+    parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")
     parser.add_argument('--net', type=str, default='resnet50')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 

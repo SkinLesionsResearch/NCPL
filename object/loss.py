@@ -49,7 +49,7 @@ def uncertainty_loss(args, logits, labels, pos_threshold=0.7, neg_threshold=0.3)
     loss_neg = 0
 
     if sum(pos_idx*1) > 0:
-        loss_pos += F.cross_entropy(logits[pos_idx], labels[pos_idx], reduction="mean")
+        loss_pos = F.cross_entropy(logits[pos_idx], labels[pos_idx], reduction="mean")
     if sum(neg_idx*1) > 0:
         neg_outputs = torch.clamp(soft_mask_output[neg_idx], 1e-7, 1.0)
         neg_logits = logits[neg_idx]
@@ -57,8 +57,14 @@ def uncertainty_loss(args, logits, labels, pos_threshold=0.7, neg_threshold=0.3)
         neg_mask_labels = torch.where(soft_mask_output <= neg_threshold,
                                       torch.ones_like(neg_soft_mask_output),
                                       torch.zeros_like(neg_soft_mask_output))
+        # print(soft_mask_output)
+        # print("neg_logits.shape: ", neg_logits.shape)
+        # print("neg_outputs: ", neg_outputs.shape)
+        # print("neg_mask_labels: ", neg_mask_labels.shape)
+
         y_neg = torch.ones(neg_logits.shape).to(device=args.device, dtype=logits.dtype)
-        loss_neg += torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs)) * neg_mask_labels), dim=-1) / \
-                    (torch.sum(neg_mask_labels, dim=-1) + 1e-7)
-    # return loss_pos + loss_neg
-    return F.cross_entropy(logits, labels)
+        # print("y_neg.shape", y_neg.shape)
+        loss_neg = torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs) * neg_mask_labels, dim=-1)) / \
+                              (torch.sum(neg_mask_labels, dim=-1) + 1e-7))
+    return loss_pos + loss_neg
+    # return F.cross_entropy(logits, labels)
