@@ -1,5 +1,6 @@
 import argparse
-import os,sys
+import os, sys
+
 os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 import os.path as osp
@@ -137,7 +138,14 @@ def train_source(args):
 
     dset_loaders = data_load(args)
     ## set base network
-    net = nn.DataParallel(utils.get_model(args.net, args.num_classes))
+    model = utils.get_model(args.net, args.num_classes)
+    if args.is_pretrained_loading:
+        is_model_state_dict_valid = model.load_state_dict(torch.load(args.training_model_path))
+        print(args.training_model_path)
+        print(is_model_state_dict_valid)
+    net = nn.DataParallel(model)
+
+    # print(is_model_state_dict_valid)
     optimizer = optim.SGD(net.parameters(), lr=args.lr)
     optimizer = op_copy(optimizer)
 
@@ -236,7 +244,7 @@ def train_source(args):
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
                 accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
-                                                                    get_metrics_sev_class(logits, y_true, y_predict)
+                    get_metrics_sev_class(logits, y_true, y_predict)
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f}, ' \
                           'F1 = {:.4f}, Recall = {:.4f}, Precision = {:.4f}'.format(
                     epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, f1, precision, recall)
@@ -291,7 +299,11 @@ if __name__ == "__main__":
                         help="number of training labeled samples[500,1000,1500,2000,2500]")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
-
+    parser.add_argument('--training_model_path', type=str,
+                        default="ckps/resnet50_neg_ce_dropout_1000_1000_0.99_naive_0_afm_0.5_u_0.5/best_params.pt",
+                        help="training model path")
+    parser.add_argument('--is_pretrained_loading', type=bool, default=False,
+                        help="whether loading pretrained model or not")
     parser.add_argument('--mix', type=bool, default=True, help="mix labeled data for afm")
     parser.add_argument('--shuffle', type=bool, default=False, help="shuffle data for afm")
     parser.add_argument('--start_u', type=int, default=6, help="epoch to start afm")
@@ -317,7 +329,7 @@ if __name__ == "__main__":
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
-                  + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
+                   + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
