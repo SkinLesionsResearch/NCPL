@@ -22,6 +22,11 @@ class ResBase(nn.Module):
         self.avgpool = model_resnet.avgpool
         # self.fc = nn.Linear(model_resnet.fc.in_features, 1024)
         self.classifier = nn.Linear(model_resnet.fc.in_features, num_classes)
+        self.classifier_dropout = torch.nn.Sequential(
+            torch.nn.Dropout(0.5),  # drop 50% neurons
+            torch.nn.ReLU(),
+            nn.Linear(model_resnet.fc.in_features, num_classes)
+        )
 
         self.fc_a = nn.Linear(model_resnet.fc.in_features, 384)
         self.fc_b = nn.Linear(model_resnet.fc.in_features, 384)
@@ -44,7 +49,7 @@ class ResBase(nn.Module):
         self.ori_features_weight = x
         features = x.view(x.size(0), -1)
         # features = self.fc(x)
-        logits = self.classifier(features)
+        logits = self.classifier_dropout(features)
         if afm:
             bs = int(features.shape[0] / 2)
             x_part1 = features[:bs, :]
@@ -59,7 +64,7 @@ class ResBase(nn.Module):
             mixup_x = weight * x_part1 + (1 - weight) * x_part2
             mixup_x = torch.cat([mixup_x, mixup_x], dim=0)
 
-            afm_logits = self.classifier(mixup_x)
+            afm_logits = self.classifier_dropout(mixup_x)
             return logits, afm_logits
         return features, logits
 
