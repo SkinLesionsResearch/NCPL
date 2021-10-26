@@ -28,7 +28,7 @@ with open("chain.script.base.sh", "r") as f:
     base_script = f.read()
     with open("chain.generated.sh", "w") as out_f:
         out_f.write(base_script)
-        # out_f.write(gen_exp_train_script(labeled_num=500, suffix="neg_500_neg", train_path="ckps_neg"))
+        out_f.write(gen_exp_train_script(labeled_num=500, suffix="neg_500_neg", train_path="ckps_neg"))
         out_f.write(gen_exp_train_script(labeled_num=1000, suffix="neg_1000_neg", train_path="ckps_neg"))
         out_f.write(gen_exp_train_script(labeled_num=1500, suffix="neg_1500_neg", train_path="ckps_neg"))
         out_f.write(gen_exp_train_script(labeled_num=2000, suffix="neg_2000_neg", train_path="ckps_neg"))
