@@ -1,5 +1,6 @@
 import argparse
-import os,sys
+import os, sys
+
 os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
 import os.path as osp
@@ -56,16 +57,27 @@ def data_load(args):
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=True)
     print('Labeled training Data Count:', len(dsets["train_x"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["train_x"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_train_labeled = pd.DataFrame(dsets["train_x"].imgs, columns=['path', 'class'])
+    print(df_train_labeled.groupby('class').count())
 
     print('Unlabeled training Data Count:', len(dsets["train_u"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["train_u"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_train_unlabeled = pd.DataFrame(dsets["train_u"].imgs, columns=['path', 'class'])
+    print(df_train_unlabeled.groupby('class').count())
+
+    args.class_propotion = np.array((df_train_labeled.groupby('class').count() + \
+                                    df_train_unlabeled.groupby('class').count())['path'].tolist())
+    args.class_propotion = 1 / args.class_propotion
+    print("class_propotion for training data")
+    print(args.class_propotion)
 
     print('\nTest Data Count:', len(dsets["test"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["test"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_test = pd.DataFrame(dsets["test"].imgs, columns=['path', 'class'])
+    print(df_test.groupby('class').count())
+    args.class_propotion_test = np.array(df_test.groupby('class')['path'].count().tolist())
+    args.class_propotion_test = 1 / args.class_propotion_test
+    print("class_propotioo for test data")
+    print(args.class_propotion_test)
+
     return dset_loaders
 
 
@@ -153,7 +165,7 @@ def train_source(args):
 
     losses = AverageMeter()
     losses_afm = AverageMeter()
-    focal_loss = FocalLoss(args.num_classes).cuda()
+    focal_loss = FocalLoss(args.num_classes, args.class_propotion).cuda()
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
 
@@ -194,7 +206,6 @@ def train_source(args):
                    args.weight_afm * F.cross_entropy(logits_train, labels_x)
         # loss_afm = args.weight_naive * focal_loss(afm_logits_train, labels_x) + \
         #            args.weight_afm * focal_loss(logits_train, labels_x)
-
 
         # else:
         #     loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
@@ -247,7 +258,7 @@ def train_source(args):
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
                 accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
-                                                                    get_metrics_sev_class(logits, y_true, y_predict)
+                    get_metrics_sev_class(logits, y_true, y_predict)
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f}, ' \
                           'F1 = {:.4f}, Recall = {:.4f}, Precision = {:.4f}'.format(
                     epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, f1, precision, recall)
@@ -331,7 +342,7 @@ if __name__ == "__main__":
     # device = torch.device('cpu')
     args.device = device
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
-                  + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
+                   + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
     args.output_dir_train = os.path.join(args.train_path, args.net + "_" + args.suffix)
     print(args.output_dir_train)
     if not osp.exists(args.train_path):
