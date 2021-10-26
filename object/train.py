@@ -14,10 +14,11 @@ from torch.utils.tensorboard import SummaryWriter
 from object.data_list import ImageList, ImageList_idx, ImageList_confident
 import json
 import random
-from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
+from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data, AverageMeter
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
+from loss import uncertainty_loss
 
 import warnings
 
@@ -150,8 +151,8 @@ def train_source(args):
 
     net.train()
 
-    losses = []
-    losses_afm = []
+    losses = AverageMeter()
+    losses_afm = AverageMeter()
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
 
@@ -178,7 +179,7 @@ def train_source(args):
 
             # if inputs_c.size(0) % 2 == 0:
             logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = F.cross_entropy(afm_logits_c, labels_c)
+            loss_c_afm = uncertainty_loss(args, afm_logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
@@ -186,9 +187,9 @@ def train_source(args):
 
         # AFM
         logits_train, afm_logits_train = net(inputs_x, afm=True)
-        loss_afm = args.weight_naive * F.cross_entropy(
-            afm_logits_train, labels_x) + args.weight_afm * F.cross_entropy(logits_train, labels_x)
-        losses_afm.append(loss_afm.item())
+        loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
+                   args.weight_afm * uncertainty_loss(args, logits_train, labels_x)
+        losses_afm.update(loss_afm.item())
 
         # Running Accuracy
         _, preds_x = torch.max(logits_train.data, 1)
@@ -212,7 +213,7 @@ def train_source(args):
             args.writer.add_scalar("train/3.acc_x", running_corrects_x.item(), args.num_eval)
             args.writer.add_scalar("train/4.acc_u", running_corrects_c.item(), args.num_eval)
 
-        losses.append(loss.item())
+        losses.update(loss.item())
         iter_num += 1
 
         utils.lr_scheduler(optimizer, iter_num=iter_num, max_iter=max_iter)
@@ -291,7 +292,7 @@ if __name__ == "__main__":
                         help="number of training labeled samples[500,1000,1500,2000,2500]")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
-
+    parser.add_argument('--train_path', type=str, default="ckps", help="data saving path for training.")
     parser.add_argument('--mix', type=bool, default=True, help="mix labeled data for afm")
     parser.add_argument('--shuffle', type=bool, default=False, help="shuffle data for afm")
     parser.add_argument('--start_u', type=int, default=6, help="epoch to start afm")
@@ -316,9 +317,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
+    device = torch.device('cuda', 0)
+    # device = torch.device('cpu')
+    args.device = device
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
                   + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
-    args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
+    args.output_dir_train = os.path.join(args.train_path, args.net + "_" + args.suffix)
+    print(args.output_dir_train)
+    if not osp.exists(args.train_path):
+        os.system('mkdir -p ' + args.train_path)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
     if not osp.exists(args.output_dir_train):
