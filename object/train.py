@@ -18,7 +18,7 @@ from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
-from loss import uncertainty_loss
+from loss import uncertainty_loss, FocalLoss
 
 import warnings
 
@@ -153,6 +153,7 @@ def train_source(args):
 
     losses = AverageMeter()
     losses_afm = AverageMeter()
+    focal_loss = FocalLoss(args.num_classes).cuda()
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
 
@@ -179,7 +180,7 @@ def train_source(args):
 
             # if inputs_c.size(0) % 2 == 0:
             logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = uncertainty_loss(args, logits_c, labels_c)
+            loss_c_afm = focal_loss(logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
@@ -187,12 +188,17 @@ def train_source(args):
 
         # AFM
         logits_train, afm_logits_train = net(inputs_x, afm=True)
-        if epoch < args.start_u:
-            loss_afm = args.weight_naive * F.cross_entropy(afm_logits_train, labels_x) + \
-                       args.weight_afm * F.cross_entropy(logits_train, labels_x)
-        else:
-            loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
-                       args.weight_afm * uncertainty_loss(args, logits_train, labels_x)
+        # if epoch < args.start_u:
+        # if True:
+        loss_afm = args.weight_naive * F.cross_entropy(afm_logits_train, labels_x) + \
+                   args.weight_afm * F.cross_entropy(logits_train, labels_x)
+        # loss_afm = args.weight_naive * focal_loss(afm_logits_train, labels_x) + \
+        #            args.weight_afm * focal_loss(logits_train, labels_x)
+
+
+        # else:
+        #     loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
+        #                args.weight_afm * uncertainty_loss(args, logits_train, labels_x)
         losses_afm.update(loss_afm.item())
 
         # Running Accuracy
