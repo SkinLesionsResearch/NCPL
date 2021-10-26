@@ -264,10 +264,10 @@ def train_source(args):
 
             net.train()
 
-    with open(osp.join(args.output_dir_train, 'losses.txt'), "w") as fp:
-        json.dump(losses, fp)
-    with open(osp.join(args.output_dir_train, 'losses_afm.txt'), "w") as fp:
-        json.dump(losses_afm, fp)
+    # with open(osp.join(args.output_dir_train, 'losses.txt'), "w") as fp:
+    #     json.dump(losses, fp)
+    # with open(osp.join(args.output_dir_train, 'losses_afm.txt'), "w") as fp:
+    #     json.dump(losses_afm, fp)
 
     return net
 
@@ -307,8 +307,8 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 
     parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of afm labeled')
-    parser.add_argument('--weight-afm', default=0.7, type=float, help='loss weight of ce labeled')
-    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of afm unlabeled')
+    parser.add_argument('--weight-afm', default=0.5, type=float, help='loss weight of ce labeled')
+    parser.add_argument('--weight-u', default=0.5, type=float, help='loss weight of afm unlabeled')
     parser.add_argument('--threshold', type=float, default=0.99, help="threshold for confident data")
 
     parser.add_argument('--distance', type=str, default='cosine', choices=["euclidean", "cosine"])
