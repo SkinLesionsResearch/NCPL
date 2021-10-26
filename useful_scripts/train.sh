@@ -18,6 +18,6 @@ python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/t
 --weight-afm 0.5 \
 --weight-u 0.5 \
 --num_classes 7 \
---suffix 'neg_fl_1000'
+--suffix 'neg_ce_1000'
 
 run_check neg_1000
