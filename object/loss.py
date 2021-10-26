@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch_utils
 
+
 class CrossEntropyLabelSmooth(nn.Module):
     """Cross entropy loss with label smoothing regularizer.
     Reference:
@@ -39,32 +40,31 @@ class CrossEntropyLabelSmooth(nn.Module):
         return loss
 
 
-def uncertainty_loss(args, logits, labels, pos_threshold=0.7, neg_threshold=0.3):
+def uncertainty_loss(args, logits, labels, pos_threshold=0.8, neg_threshold=0.3):
     soft_mask_output = nn.Softmax(dim=1)(logits)
 
     pos_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output >= pos_threshold)[0]
     neg_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output <= neg_threshold)[0]
 
-    loss_pos = 0
-    loss_neg = 0
+    loss_pos = torch.tensor(0.0).to(device=args.device)
+    loss_neg = torch.tensor(0.0).to(device=args.device)
 
-    if sum(pos_idx*1) > 0:
+    if sum(pos_idx * 1) > 0:
         loss_pos = F.cross_entropy(logits[pos_idx], labels[pos_idx], reduction="mean")
-    if sum(neg_idx*1) > 0:
-        neg_outputs = torch.clamp(soft_mask_output[neg_idx], 1e-7, 1.0)
-        neg_logits = logits[neg_idx]
+    if sum(neg_idx * 1) > 0:
         neg_soft_mask_output = soft_mask_output[neg_idx]
-        neg_mask_labels = torch.where(soft_mask_output <= neg_threshold,
+        neg_outputs = torch.clamp(neg_soft_mask_output, 1e-7, 1.0)
+        neg_logits = logits[neg_idx]
+        neg_mask_labels = torch.where(neg_soft_mask_output <= neg_threshold,
                                       torch.ones_like(neg_soft_mask_output),
                                       torch.zeros_like(neg_soft_mask_output))
-        # print(soft_mask_output)
-        # print("neg_logits.shape: ", neg_logits.shape)
-        # print("neg_outputs: ", neg_outputs.shape)
-        # print("neg_mask_labels: ", neg_mask_labels.shape)
-
         y_neg = torch.ones(neg_logits.shape).to(device=args.device, dtype=logits.dtype)
-        # print("y_neg.shape", y_neg.shape)
-        loss_neg = torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs) * neg_mask_labels, dim=-1)) / \
+        loss_neg = torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs) * neg_mask_labels, dim=-1)) /
                               (torch.sum(neg_mask_labels, dim=-1) + 1e-7))
+    if torch.isnan(loss_pos):
+        print("pos_nan")
+    if torch.isnan(loss_neg):
+        print("neg_nan")
+
     return loss_pos + loss_neg
     # return F.cross_entropy(logits, labels)

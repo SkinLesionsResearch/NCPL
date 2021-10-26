@@ -164,7 +164,7 @@ def train_source(args):
         inputs_x, labels_x = inputs_x.cuda(), labels_x.cuda()
 
         if epoch >= args.start_u:
-            if iter_num % interval_iter == 0:
+            if iter_num == iter_per_epoch * args.start_u or iter_num % interval_iter == 0:
                 net.eval()
                 confident_loader = obtain_confident_loader(dset_loaders["train_u"], net, args)
                 net.train()
@@ -179,7 +179,7 @@ def train_source(args):
 
             # if inputs_c.size(0) % 2 == 0:
             logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = uncertainty_loss(args, afm_logits_c, labels_c)
+            loss_c_afm = uncertainty_loss(args, logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
@@ -187,8 +187,12 @@ def train_source(args):
 
         # AFM
         logits_train, afm_logits_train = net(inputs_x, afm=True)
-        loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
-                   args.weight_afm * uncertainty_loss(args, logits_train, labels_x)
+        if epoch < args.start_u:
+            loss_afm = args.weight_naive * F.cross_entropy(afm_logits_train, labels_x) + \
+                       args.weight_afm * F.cross_entropy(logits_train, labels_x)
+        else:
+            loss_afm = args.weight_naive * uncertainty_loss(args, afm_logits_train, labels_x) + \
+                       args.weight_afm * uncertainty_loss(args, logits_train, labels_x)
         losses_afm.update(loss_afm.item())
 
         # Running Accuracy
@@ -298,7 +302,7 @@ if __name__ == "__main__":
     parser.add_argument('--start_u', type=int, default=6, help="epoch to start afm")
     parser.add_argument('--ce_loss', type=bool, default=True, help="extra cross entropy")
 
-    parser.add_argument('--max_epoch', type=int, default=60, help="max iterations")
+    parser.add_argument('--max_epoch', type=int, default=120, help="max iterations")
     parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
     parser.add_argument('--step_size', type=int, default=15, help="batch_size")
     parser.add_argument('--worker', type=int, default=4, help="number of workers")
