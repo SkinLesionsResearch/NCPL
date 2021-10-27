@@ -19,6 +19,7 @@ from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
+# from loss import uncertainty_loss, FocalLoss, FocalLossClassPropotion
 
 import warnings
 
@@ -56,16 +57,28 @@ def data_load(args):
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=True)
     print('Labeled training Data Count:', len(dsets["train_x"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["train_x"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_train_labeled = pd.DataFrame(dsets["train_x"].imgs, columns=['path', 'class'])
+    print(df_train_labeled.groupby('class').count())
 
     print('Unlabeled training Data Count:', len(dsets["train_u"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["train_u"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_train_unlabeled = pd.DataFrame(dsets["train_u"].imgs, columns=['path', 'class'])
+    print(df_train_unlabeled.groupby('class').count())
+
+
+    args.class_propotion = np.array((df_train_labeled.groupby('class').count() + \
+                                    df_train_unlabeled.groupby('class').count())['path'].tolist())
+    args.class_propotion = 1 / args.class_propotion
+    print("class_propotion for training data")
+    print(args.class_propotion)
 
     print('\nTest Data Count:', len(dsets["test"]), ', Distribution:')
-    df_train = pd.DataFrame(dsets["test"].imgs, columns=['class', 'num'])
-    print(df_train.groupby('num').count())
+    df_test = pd.DataFrame(dsets["test"].imgs, columns=['path', 'class'])
+    print(df_test.groupby('class').count())
+    args.class_propotion_test = np.array(df_test.groupby('class')['path'].count().tolist())
+    args.class_propotion_test = 1 / args.class_propotion_test
+    print("class_propotioo for test data")
+    print(args.class_propotion_test)
+
     return dset_loaders
 
 
@@ -162,6 +175,7 @@ def train_source(args):
 
     losses = []
     losses_afm = []
+    # focal_loss = FocalLossClassPropotion(args.num_classes, args.class_propotion).cuda()
     confident_loader = None
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
@@ -298,6 +312,8 @@ if __name__ == "__main__":
                         default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data'
                                 '/semi_processed_absolute',
                         help='source dataset path')
+    parser.add_argument('--check_points_path', type=str, default="checkpoints path to save",
+                        help='path to save checkpoints.')
     parser.add_argument('--gpu_ids', type=str, nargs='?', default='0,1,2,3,4,5,6,7', help="device id to run")
     # parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help="device id to run")
     parser.add_argument('--labeled_num', type=int, default=500,
@@ -336,7 +352,10 @@ if __name__ == "__main__":
     args.device = torch.device('cuda', 0)
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
                    + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
-    args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
+    args.output_dir_train = os.path.join(args.check_points_path, args.net + "_" + args.suffix)
+    print(args.output_dir_train)
+    if not osp.exists(args.check_points_path):
+        os.system('mkdir -p ' + args.check_points_path)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)
     if not osp.exists(args.output_dir_train):
