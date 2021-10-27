@@ -162,6 +162,7 @@ def train_source(args):
 
     losses = []
     losses_afm = []
+    confident_loader = None
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
 
@@ -172,7 +173,6 @@ def train_source(args):
             inputs_x, labels_x = iter_x.next()
         inputs_x, labels_x = inputs_x.cuda(), labels_x.cuda()
 
-        confident_loader = None
         if iter_num == iter_per_epoch * args.start_u or epoch >= args.start_u:
             if iter_num % interval_iter == 0:
                 net.eval()
@@ -333,6 +333,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
+    args.device = torch.device('cuda', 0)
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
                    + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
