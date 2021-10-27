@@ -139,7 +139,9 @@ def train_source(args):
     dset_loaders = data_load(args)
     ## set base network
     model = utils.get_model(args.net, args.num_classes)
+    print(args.is_pretrained_loading)
     if args.is_pretrained_loading:
+        print("loading pretrained model ......")
         is_model_state_dict_valid = model.load_state_dict(torch.load(args.training_model_path))
         print(args.training_model_path)
         print(is_model_state_dict_valid)
