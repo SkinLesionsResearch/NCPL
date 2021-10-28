@@ -10,6 +10,7 @@ function run_check() {
 	fi
 }
 
+exp_flag='neg_ul_unlbl_ce_lbl'
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
 --src-dset-path './data/semi_processed' \
 --start_u 6 \
@@ -20,6 +21,6 @@ python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/t
 --weight-afm 0.5 \
 --weight-u 0.5 \
 --num_classes 7 \
---suffix 'neg_ce_dropout_1000_ul'
+--suffix $exp_flag
 
-run_check neg_ce_dropout_1000_ul
+run_check $exp_flag

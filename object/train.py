@@ -178,6 +178,8 @@ def train_source(args):
     losses_afm = []
     focal_loss_class_proportion = FocalLossClassProportion(args.num_classes, args.class_proportion).cuda()
     uncertainty_loss = UncertaintyLoss(args.device, 0.8, 0.3)
+    unlabeled_loss_fn = uncertainty_loss
+    labeled_loss_fn = F.cross_entropy
     confident_loader = None
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
@@ -207,7 +209,7 @@ def train_source(args):
 
             # if inputs_c.size(0) % 2 == 0:
             logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = uncertainty_loss(afm_logits_c, labels_c)
+            loss_c_afm = unlabeled_loss_fn(afm_logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
@@ -215,8 +217,12 @@ def train_source(args):
 
         # AFM
         logits_train, afm_logits_train = net(inputs_x, afm=True)
-        loss_afm = args.weight_naive * F.cross_entropy(
-            afm_logits_train, labels_x) + args.weight_afm * F.cross_entropy(logits_train, labels_x)
+        if True:
+            loss_afm = args.weight_naive * labeled_loss_fn(
+                afm_logits_train, labels_x) + args.weight_afm * labeled_loss_fn(logits_train, labels_x)
+        else:
+            loss_afm = args.weight_naive * unlabeled_loss_fn(
+                afm_logits_train, labels_x) + args.weight_afm * unlabeled_loss_fn(logits_train, labels_x)
         losses_afm.append(loss_afm.item())
 
         # Running Accuracy
@@ -341,8 +347,8 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 
     parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of afm labeled')
-    parser.add_argument('--weight-afm', default=0.7, type=float, help='loss weight of ce labeled')
-    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of afm unlabeled')
+    parser.add_argument('--weight-afm', default=0.5, type=float, help='loss weight of ce labeled')
+    parser.add_argument('--weight-u', default=0.5, type=float, help='loss weight of afm unlabeled')
     parser.add_argument('--threshold', type=float, default=0.99, help="threshold for confident data")
 
     parser.add_argument('--distance', type=str, default='cosine', choices=["euclidean", "cosine"])
