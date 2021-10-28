@@ -22,4 +22,4 @@ python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/t
 --num_classes 7 \
 --suffix 'neg_ce_dropout_1000_ul'
 
-run_check neg_ce_dropout_1000_fl
+run_check neg_ce_dropout_1000_ul
