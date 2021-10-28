@@ -12,8 +12,10 @@ function run_check() {
 
 exp_flag='neg_ul_unlbl_ce_lbl'
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
+--is_pretrained_loading True \
+--pretrained_model_path 'ckps_ncpl_bl/resnet50_neg_ul_unlbl_ce_lbl_1000_0.99_naive_0_afm_0.5_u_0.5/best_params.pt' \
 --src-dset-path './data/semi_processed' \
---start_u 6 \
+--start_u 0 \
 --max_epoch 60 \
 --check_points_path 'ckps_ncpl_bl' \
 --labeled_num 1000 \

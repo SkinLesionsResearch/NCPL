@@ -170,6 +170,7 @@ def train_source(args):
     iter_per_epoch = len(dset_loaders["train_x"])
     max_iter = args.max_epoch * len(dset_loaders["train_x"])
     interval_iter = max_iter // 10
+    interval_epoch = 6
     iter_num = 0
 
     net.train()
@@ -192,7 +193,8 @@ def train_source(args):
         inputs_x, labels_x = inputs_x.cuda(), labels_x.cuda()
 
         if iter_num == iter_per_epoch * args.start_u or epoch >= args.start_u:
-            if iter_num % interval_iter == 0:
+            # if iter_num % interval_iter == 0:
+            if iter_num % (interval_epoch * iter_per_epoch) == 0:
                 net.eval()
                 confident_loader = obtain_confident_loader(dset_loaders["train_u"], net, args)
                 net.train()
@@ -255,7 +257,8 @@ def train_source(args):
         loss.backward()
         optimizer.step()
 
-        if iter_num % interval_iter == 0 or iter_num == max_iter:
+        # if iter_num % interval_iter == 0 or iter_num == max_iter:
+        if iter_num % (interval_epoch * iter_per_epoch) == 0 or iter_num == max_iter:
             net.eval()
             features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
 
@@ -341,6 +344,8 @@ if __name__ == "__main__":
     parser.add_argument('--max_epoch', type=int, default=60, help="max iterations")
     parser.add_argument('--batch_size', type=int, default=32, help="batch_size")
     parser.add_argument('--step_size', type=int, default=15, help="batch_size")
+    parser.add_argument('--interval_epoch', type=int, default=6,
+                        help='interval epoch to test and add pseudo-labeled data')
     parser.add_argument('--worker', type=int, default=4, help="number of workers")
     parser.add_argument('--lr', type=float, default=1e-2, help="learning rate")
     parser.add_argument('--net', type=str, default='resnet50')
