@@ -12,6 +12,7 @@ function run_check() {
 
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
 --src-dset-path './data/semi_processed' \
+--start_u 6 \
 --max_epoch 60 \
 --check_points_path 'ckps_ncpl_bl' \
 --labeled_num 1000 \
@@ -19,6 +20,6 @@ python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/t
 --weight-afm 0.5 \
 --weight-u 0.5 \
 --num_classes 7 \
---suffix 'neg_ce_dropout_1000'
+--suffix 'neg_ce_dropout_1000_ul'
 
-run_check neg_1000
+run_check neg_ce_dropout_1000_fl

@@ -19,7 +19,7 @@ from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
 from object.transforms import image_test, image_train
 from object.imbalanced import ImbalancedDatasetSampler
 from object import utils
-# from loss import uncertainty_loss, FocalLoss, FocalLossClassPropotion
+from loss import UncertaintyLoss, UncertaintyLoss, FocalLossClassProportion
 
 import warnings
 
@@ -65,19 +65,20 @@ def data_load(args):
     print(df_train_unlabeled.groupby('class').count())
 
 
-    args.class_propotion = np.array((df_train_labeled.groupby('class').count() + \
+    args.class_proportion = np.array((df_train_labeled.groupby('class').count() + \
                                     df_train_unlabeled.groupby('class').count())['path'].tolist())
-    args.class_propotion = 1 / args.class_propotion
-    print("class_propotion for training data")
-    print(args.class_propotion)
+    args.class_proportion = 1 / args.class_proportion
+    # args.class_proportion = args.class_proportion / sum(args.class_proportion)
+    print("class_proportion for training data")
+    print(args.class_proportion)
 
     print('\nTest Data Count:', len(dsets["test"]), ', Distribution:')
     df_test = pd.DataFrame(dsets["test"].imgs, columns=['path', 'class'])
     print(df_test.groupby('class').count())
-    args.class_propotion_test = np.array(df_test.groupby('class')['path'].count().tolist())
-    args.class_propotion_test = 1 / args.class_propotion_test
-    print("class_propotioo for test data")
-    print(args.class_propotion_test)
+    args.class_proportion_test = np.array(df_test.groupby('class')['path'].count().tolist())
+    args.class_proportion_test = 1 / args.class_proportion_test
+    print("class_proportion for test data")
+    print(args.class_proportion_test)
 
     return dset_loaders
 
@@ -155,8 +156,8 @@ def train_source(args):
     print(args.is_pretrained_loading)
     if args.is_pretrained_loading:
         print("loading pretrained model ......")
-        is_model_state_dict_valid = model.load_state_dict(torch.load(args.training_model_path))
-        print(args.training_model_path)
+        is_model_state_dict_valid = model.load_state_dict(torch.load(args.pretrained_model_path))
+        print(args.pretrained_model_path)
         print(is_model_state_dict_valid)
     net = nn.DataParallel(model)
 
@@ -175,7 +176,8 @@ def train_source(args):
 
     losses = []
     losses_afm = []
-    # focal_loss = FocalLossClassPropotion(args.num_classes, args.class_propotion).cuda()
+    focal_loss_class_proportion = FocalLossClassProportion(args.num_classes, args.class_proportion).cuda()
+    uncertainty_loss = UncertaintyLoss(args.device, 0.8, 0.3)
     confident_loader = None
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
@@ -205,7 +207,7 @@ def train_source(args):
 
             # if inputs_c.size(0) % 2 == 0:
             logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = F.cross_entropy(afm_logits_c, labels_c)
+            loss_c_afm = uncertainty_loss(afm_logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
@@ -320,7 +322,7 @@ if __name__ == "__main__":
                         help="number of training labeled samples[500,1000,1500,2000,2500]")
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
-    parser.add_argument('--training_model_path', type=str,
+    parser.add_argument('--pretrained_model_path', type=str,
                         default="ckps/resnet50_neg_ce_dropout_1000_1000_0.99_naive_0_afm_0.5_u_0.5/best_params.pt",
                         help="training model path")
     parser.add_argument('--is_pretrained_loading', type=bool, default=False,
@@ -347,7 +349,9 @@ if __name__ == "__main__":
     parser.add_argument('--imb', type=bool, default=False, help="imbalanced sampler")
     parser.add_argument('--suffix', type=str, default='', help="for checkpoint saving")
     args = parser.parse_args()
-
+    print(args.max_epoch)
+    print(args.weight_afm)
+    print(args.weight_u)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
     args.device = torch.device('cuda', 0)
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \

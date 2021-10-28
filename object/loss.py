@@ -62,7 +62,7 @@ class FocalLoss(nn.Module):
     """
 
     def __init__(self, class_num, alpha=None, gamma=2, size_average=True):
-        super(FocalLoss, self).__init__()
+        super(UncertaintyLoss, self).__init__()
         if alpha is None:
             self.alpha = Variable(torch.ones(class_num, 1))
         else:
@@ -106,39 +106,45 @@ class FocalLoss(nn.Module):
         return loss
 
 
-def uncertainty_loss(args, logits, labels, pos_threshold=0.8, neg_threshold=0.3):
-    soft_mask_output = nn.Softmax(dim=1)(logits)
+class UncertaintyLoss(nn.Module):
+    def __init__(self, device, pos_threshold=0.8, neg_threshold=0.3):
+        super(UncertaintyLoss, self).__init__()
+        self.device = device
+        self.pos_threshold = pos_threshold
+        self.neg_threshold = neg_threshold
 
-    pos_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output >= pos_threshold)[0]
-    neg_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output <= neg_threshold)[0]
+    def forward(self, logits, labels):
+        soft_mask_output = nn.Softmax(dim=1)(logits)
 
-    loss_pos = torch.tensor(0.0).to(device=args.device)
-    loss_neg = torch.tensor(0.0).to(device=args.device)
+        pos_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output >= self.pos_threshold)[0]
+        neg_idx = torch_utils.get_idx(soft_mask_output, soft_mask_output <= self.neg_threshold)[0]
 
-    if sum(pos_idx * 1) > 0:
-        loss_pos = F.cross_entropy(logits[pos_idx], labels[pos_idx], reduction="mean")
-    if sum(neg_idx * 1) > 0:
-        neg_soft_mask_output = soft_mask_output[neg_idx]
-        neg_outputs = torch.clamp(neg_soft_mask_output, 1e-7, 1.0)
-        neg_logits = logits[neg_idx]
-        neg_mask_labels = torch.where(neg_soft_mask_output <= neg_threshold,
-                                      torch.ones_like(neg_soft_mask_output),
-                                      torch.zeros_like(neg_soft_mask_output))
-        y_neg = torch.ones(neg_logits.shape).to(device=args.device, dtype=logits.dtype)
-        loss_neg = torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs) * neg_mask_labels, dim=-1)) /
-                              (torch.sum(neg_mask_labels, dim=-1) + 1e-7))
-    if torch.isnan(loss_pos):
-        loss_pos = torch.tensor(0.0).to(device=args.device)
-        print("pos_nan")
-    if torch.isnan(loss_neg):
-        loss_neg = torch.tensor(0.0).to(device=args.device)
-        print("neg_nan")
+        loss_pos = torch.tensor(0.0).to(device=self.device)
+        loss_neg = torch.tensor(0.0).to(device=self.device)
 
-    return loss_pos + loss_neg
-    # return F.cross_entropy(logits, labels)
+        if sum(pos_idx * 1) > 0:
+            loss_pos = F.cross_entropy(logits[pos_idx], labels[pos_idx], reduction="mean")
+        if sum(neg_idx * 1) > 0:
+            neg_soft_mask_output = soft_mask_output[neg_idx]
+            neg_outputs = torch.clamp(neg_soft_mask_output, 1e-7, 1.0)
+            neg_logits = logits[neg_idx]
+            neg_mask_labels = torch.where(neg_soft_mask_output <= self.neg_threshold,
+                                          torch.ones_like(neg_soft_mask_output),
+                                          torch.zeros_like(neg_soft_mask_output))
+            y_neg = torch.ones(neg_logits.shape).to(device=self.device, dtype=logits.dtype)
+            loss_neg = torch.mean((-torch.sum(y_neg * torch.log(1 - neg_outputs) * neg_mask_labels, dim=-1)) /
+                                  (torch.sum(neg_mask_labels, dim=-1) + 1e-7))
+        if torch.isnan(loss_pos):
+            loss_pos = torch.tensor(0.0).to(device=self.device)
+            print("pos_nan")
+        if torch.isnan(loss_neg):
+            loss_neg = torch.tensor(0.0).to(device=self.device)
+            print("neg_nan")
+
+        return loss_pos + loss_neg
 
 
-class FocalLossClassPropotion(nn.Module):
+class FocalLossClassProportion(nn.Module):
     r"""
         This criterion is a implemenation of Focal Loss, which is proposed in
         Focal Loss for Dense Object Detection.
@@ -161,7 +167,7 @@ class FocalLossClassPropotion(nn.Module):
     def __init__(self, class_num, class_propotion=None,
                  alpha=1.1, class_factor=torch.Tensor([1, 1, 1, 1, 1, 1, 1]),
                  gamma=2, size_average=True):
-        super(FocalLossClassPropotion, self).__init__()
+        super(FocalLossClassProportion, self).__init__()
         if class_propotion is None:
             self.class_propotion = Variable(torch.ones(class_num, 1))
         else:
@@ -194,13 +200,21 @@ class FocalLossClassPropotion(nn.Module):
         batch_size = inputs.size(0)
         class_factor = self.class_factor.repeat([batch_size, 1])
         class_propotion = self.class_propotion.repeat([batch_size, 1])
-        probs = (P * class_mask).sum(1).view(-1, 1)
-
+        # probs = (P * class_mask).sum(1).view(-1, 1)
+        probs = P
         log_p = probs.log()
         # print('probs size= {}'.format(probs.size()))
         # print(probs)
 
-        batch_loss = -torch.pow(class_propotion, self.alpha) * class_factor \
+        # print(class_propotion)
+        # print(self.alpha)
+        # print(class_factor)
+        # print(1-probs)
+        # print(log_p)
+        # batch_loss = -torch.pow(class_propotion, self.alpha) * class_factor \
+        #              * (torch.pow((1 - probs), self.gamma)) * log_p
+        self.alpha = 0.8
+        batch_loss = - torch.pow(class_propotion, self.alpha) * class_factor \
                      * (torch.pow((1 - probs), self.gamma)) * log_p
         # print('-----bacth_loss------')
         # print(batch_loss)
