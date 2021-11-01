@@ -12,7 +12,7 @@ function run_check() {
 python -u /home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/object/train.py \
 --src-dset-path './data/semi_processed' \
 --labeled_num 1000 \
---weight-afm 0.9 \
+--weight-fi 0.9 \
 --weight-u 0.1 \
 --num_classes 7 \
 --suffix "acfi_1000"

@@ -151,7 +151,7 @@ def train_source(args):
     net.train()
 
     losses = []
-    losses_afm = []
+    losses_fi = []
     while iter_num < max_iter:
         epoch = int(iter_num / iter_per_epoch)
 
@@ -177,18 +177,18 @@ def train_source(args):
             inputs_c, labels_c, real_c = inputs_c.cuda(), labels_c.cuda(), real_c.cuda()
 
             # if inputs_c.size(0) % 2 == 0:
-            logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = F.cross_entropy(afm_logits_c, labels_c)
+            logits_c, fi_logits_c = net(inputs_c, is_feature_integration=True)
+            loss_c_fi = F.cross_entropy(fi_logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
             running_corrects_c = num_correct_c.float() / float(preds_c.shape[0]) * 100
 
-        # AFM
-        logits_train, afm_logits_train = net(inputs_x, afm=True)
-        loss_afm = args.weight_naive * F.cross_entropy(
-            afm_logits_train, labels_x) + args.weight_afm * F.cross_entropy(logits_train, labels_x)
-        losses_afm.append(loss_afm.item())
+        # Feature Integration Part
+        logits_train, fi_logits_train = net(inputs_x, is_feature_integration=True)
+        loss_fi = args.weight_naive * F.cross_entropy(
+            fi_logits_train, labels_x) + args.weight_fi * F.cross_entropy(logits_train, labels_x)
+        losses_fi.append(loss_fi.item())
 
         # Running Accuracy
         _, preds_x = torch.max(logits_train.data, 1)
@@ -197,18 +197,18 @@ def train_source(args):
 
         args.num_eval = iter_num
         if epoch < args.start_u:
-            loss = loss_afm
-            print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, acc_x: {:.2f}%'
-                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), running_corrects_x.item()))
-            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
+            loss = loss_fi
+            print('epoch:{}/{}, iter:{}/{}, loss_fi: {:.2f}, acc_x: {:.2f}%'
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_fi.item(), running_corrects_x.item()))
+            args.writer.add_scalar("train/1.loss_fi", loss_fi.item(), args.num_eval)
             args.writer.add_scalar("train/2.acc_x", running_corrects_x.item(), args.num_eval)
         else:
-            loss = loss_afm + args.weight_u * loss_c_afm
-            print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, loss_c_afm: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
-                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
+            loss = loss_fi + args.weight_u * loss_c_fi
+            print('epoch:{}/{}, iter:{}/{}, loss_fi: {:.2f}, loss_c_fi: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_fi.item(), loss_c_fi.item(), \
                           running_corrects_x.item(), running_corrects_c.item()))
-            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
-            args.writer.add_scalar("train/2.loss_c_afm", loss_c_afm.item(), args.num_eval)
+            args.writer.add_scalar("train/1.loss_fi", loss_fi.item(), args.num_eval)
+            args.writer.add_scalar("train/2.loss_c_fi", loss_c_fi.item(), args.num_eval)
             args.writer.add_scalar("train/3.acc_x", running_corrects_x.item(), args.num_eval)
             args.writer.add_scalar("train/4.acc_u", running_corrects_c.item(), args.num_eval)
 
@@ -265,8 +265,8 @@ def train_source(args):
 
     with open(osp.join(args.output_dir_train, 'losses.txt'), "w") as fp:
         json.dump(losses, fp)
-    with open(osp.join(args.output_dir_train, 'losses_afm.txt'), "w") as fp:
-        json.dump(losses_afm, fp)
+    with open(osp.join(args.output_dir_train, 'losses_fi.txt'), "w") as fp:
+        json.dump(losses_fi, fp)
 
     return net
 
@@ -280,7 +280,7 @@ def print_args(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
-    parser.add_argument('--name', type=str, default="afm-resnet", help='experiment name')
+    parser.add_argument('--name', type=str, default="fi-resnet", help='experiment name')
     parser.add_argument('--src-dset-path', type=str,
                         default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data'
                                 '/semi_processed_absolute',
@@ -292,9 +292,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_classes', type=int, default=7, help="number of classes")
     parser.add_argument('--is_save', type=bool, default=True, help="is save checkpoint")
 
-    parser.add_argument('--mix', type=bool, default=True, help="mix labeled data for afm")
-    parser.add_argument('--shuffle', type=bool, default=False, help="shuffle data for afm")
-    parser.add_argument('--start_u', type=int, default=6, help="epoch to start afm")
+    parser.add_argument('--mix', type=bool, default=True, help="mix labeled data for fi")
+    parser.add_argument('--shuffle', type=bool, default=False, help="shuffle data for fi")
+    parser.add_argument('--start_u', type=int, default=6, help="epoch to start fi")
     parser.add_argument('--ce_loss', type=bool, default=True, help="extra cross entropy")
 
     parser.add_argument('--max_epoch', type=int, default=60, help="max iterations")
@@ -305,9 +305,9 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, default='resnet50')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 
-    parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of afm labeled')
-    parser.add_argument('--weight-afm', default=0.7, type=float, help='loss weight of ce labeled')
-    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of afm unlabeled')
+    parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of fi labeled')
+    parser.add_argument('--weight-fi', default=0.7, type=float, help='loss weight of ce labeled')
+    parser.add_argument('--weight-u', default=0.3, type=float, help='loss weight of fi unlabeled')
     parser.add_argument('--threshold', type=float, default=0.99, help="threshold for confident data")
 
     parser.add_argument('--distance', type=str, default='cosine', choices=["euclidean", "cosine"])
@@ -317,7 +317,7 @@ if __name__ == "__main__":
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_ids
     args.suffix += '_' + str(args.labeled_num) + '_' + str(args.threshold) + '_naive_' \
-                  + str(args.weight_naive) + '_afm_' + str(args.weight_afm) + '_u_' + str(args.weight_u)
+                  + str(args.weight_naive) + '_fi_' + str(args.weight_fi) + '_u_' + str(args.weight_u)
     args.output_dir_train = os.path.join('./ckps/', args.net + "_" + args.suffix)
     if not osp.exists(args.output_dir_train):
         os.system('mkdir -p ' + args.output_dir_train)

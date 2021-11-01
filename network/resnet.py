@@ -31,7 +31,7 @@ class ResBase(nn.Module):
         self.fc_weight = nn.Linear(384, 1)
         self.fc_weight_sigmoid = nn.Sigmoid()
 
-    def forward(self, x, afm=False):
+    def forward(self, x, is_feature_integration=False):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -46,7 +46,7 @@ class ResBase(nn.Module):
         features = x.view(x.size(0), -1)
         # features = self.fc(x)
         logits = self.classifier(features)
-        if afm:
+        if is_feature_integration:
             bs = int(features.shape[0] / 2)
             x_part1 = features[:bs, :]
             x_part2 = features[bs:, :]
