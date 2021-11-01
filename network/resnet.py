@@ -2,10 +2,12 @@ import torch
 import torch.nn as nn
 from torchvision import models
 import torch.nn.functional as F
-res_dict = {"resnet18":models.resnet18, "resnet34":models.resnet34,
-            "resnet50":models.resnet50,"resnet101":models.resnet101,
-            "resnet152":models.resnet152, "resnext50":models.resnext50_32x4d,
-            "resnext101":models.resnext101_32x8d}
+
+res_dict = {"resnet18": models.resnet18, "resnet34": models.resnet34,
+            "resnet50": models.resnet50, "resnet101": models.resnet101,
+            "resnet152": models.resnet152, "resnext50": models.resnext50_32x4d,
+            "resnext101": models.resnext101_32x8d}
+
 
 class ResBase(nn.Module):
     def __init__(self, name, num_classes):
@@ -28,7 +30,6 @@ class ResBase(nn.Module):
 
         self.fc_weight = nn.Linear(384, 1)
         self.fc_weight_sigmoid = nn.Sigmoid()
-
 
     def forward(self, x, afm=False):
         x = self.conv1(x)
@@ -63,12 +64,12 @@ class ResBase(nn.Module):
             return logits, afm_logits
         return features, logits
 
+
 if __name__ == '__main__':
     import torch
+
     model = ResBase('resnet50', 2).cuda()
     rand = torch.rand(1, 3, 256, 256).cuda()
     # cam, _, _ = model(rand)
     model(rand)
     # print(cam.shape)
-
-
