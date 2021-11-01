@@ -48,6 +48,6 @@ tensorboard --logdir=results
 ```
 ## System Architecture
 ### PLGS Module
-![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/ArchitectureGraph/PLGS.png)
+![image](https://github.com/SkinLesionsResearch/NCPL/blob/ncpl_demo/ArchitectureGraph/PLGS.png)
 ### ACFI Module
-![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/ArchitectureGraph/ACFI.png)
+![image](https://github.com/SkinLesionsResearch/NCPL/blob/ncpl_demo/ArchitectureGraph/ACFI.png)
