@@ -24,14 +24,6 @@ The unlabeled training data subdirectory is the "data/semi_processed/[Num of Sam
 
 The testing data subdirectory is the "data/semi_processed/test.txt"
 
-- File Format: The txt file for both training and testing data is as following format
-
-"./../ups/data_ham10000/datasets/ISIC_0030828.jpg 4",
-
-The first "./../ups/data_ham10000/datasets/ISIC_0030828.jpg" is the path to image on dist,
-
-The second "4" is the corresponding label.
-
 ## Training
 ```shell
 
@@ -55,6 +47,7 @@ python -u ./train.py \
 tensorboard --logdir=results
 ```
 ## System Architecture
-![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/IMG/PLGS.png)
-## Results
-Ready to publish afterwards.
+### PLGS Module
+![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/ArchitectureGraph/PLGS.png)
+### ACFI Module
+![image](https://github.com/SkinLesionsResearch/NCPL/blob/master/ArchitectureGraph/ACFI.png)
