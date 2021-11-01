@@ -47,7 +47,7 @@ python -u ./train.py \
 tensorboard --logdir=results
 ```
 ## System Architecture
-### PLGS Module
+### (a) ACFI Module
 ![image](https://github.com/SkinLesionsResearch/NCPL/blob/ncpl_demo/ArchitectureGraph/PLGS.png)
-### ACFI Module
+### (b) PLGS Module
 ![image](https://github.com/SkinLesionsResearch/NCPL/blob/ncpl_demo/ArchitectureGraph/ACFI.png)
