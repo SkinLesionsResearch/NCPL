@@ -4,7 +4,8 @@ from pathlib import Path
 rootdir = "./semi/train"
 # target_dir = "./semi_processed"
 # target_dir_name = "semi_processed_two_cates"
-target_dir_name = "semi_processed_absolute"
+# target_dir_name = "semi_processed_absolute"
+target_dir_name = "semi_processed_bcc"
 target_data_base_path = "/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data_ham10000/datasets"
 
 # make the target transferred directories
@@ -26,8 +27,8 @@ def process_test_data():
         test_file_path = str(test_path.absolute())
         target_file_path = replace_last(test_file_path, "semi", target_dir_name)
         print(test_file_path)
-        # process_file_two_cate(target_data_base_path, test_file_path, target_file_path)
-        process_file(target_data_base_path, test_file_path, target_file_path)
+        process_file_two_cate(target_data_base_path, test_file_path, target_file_path)
+        # process_file(target_data_base_path, test_file_path, target_file_path)
         print(target_file_path)
 
 
@@ -62,16 +63,16 @@ def process_train_data():
                 print(src_file_path)
                 target_file_path = replace_last(src_file_path, "semi", target_dir_name)
                 print(target_file_path)
-                # process_file_two_cate(target_data_base_path, src_file_path, target_file_path)
-                process_file(target_data_base_path, src_file_path, target_file_path)
+                process_file_two_cate(target_data_base_path, src_file_path, target_file_path)
+                # process_file(target_data_base_path, src_file_path, target_file_path)
             train_unlabeled_path = path.joinpath("train_unlabeled.txt")
             if train_unlabeled_path.is_file():
                 src_file_path = str(train_unlabeled_path.absolute())
                 print(src_file_path)
                 target_file_path = replace_last(src_file_path, "semi", target_dir_name)
                 print(target_file_path)
-                # process_file_two_cate(target_data_base_path, src_file_path, target_file_path)
-                process_file(target_data_base_path, src_file_path, target_file_path)
+                process_file_two_cate(target_data_base_path, src_file_path, target_file_path)
+                # process_file(target_data_base_path, src_file_path, target_file_path)
 
 
 def main():

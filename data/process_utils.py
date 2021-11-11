@@ -8,7 +8,7 @@ def process_file_two_cate(base_path, src_file_path, target_file_path):
 
     def process_label(label):
         # change label to two categories, 1 for 4(mel), 0 for others
-        return 1 if label == 4 else 0
+        return 1 if label == 1 else 0
 
     input_df = pd.read_csv(src_file_path, delimiter=" ", index_col=None, header=None)
     input_df.iloc[:, 0] = input_df.iloc[:, 0].map(process_img_path)

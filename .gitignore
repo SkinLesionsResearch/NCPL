@@ -1,7 +1,7 @@
 nohup.out
 .idea
-ckps
-ckps_bl
+cam_res/*
+ckps*
 test
 __pycache__
 *.log

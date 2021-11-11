@@ -39,9 +39,18 @@ def data_load(args):
     train_x_txt = open(osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_labeled.txt')).readlines()
     train_u_txt = open(osp.join(args.src_dset_path, 'train', str(args.labeled_num), 'train_unlabeled.txt')).readlines()
     test_txt = open(osp.join(args.src_dset_path, 'test.txt')).readlines()
+    if args.net[0:5] == "senet":
+        image_train_transform = image_train(299)
+        image_test_transform = image_test(299)
+    elif args.net[0:3] == "ran":
+        image_train_transform = image_train(32)
+        image_test_transform = image_test(32)
+    else:
+        image_train_transform = image_train()
+        image_test_transform = image_test()
 
-    dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train())
-    dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train())
+    dsets["train_x"] = ImageList(train_x_txt, args, transform=image_train_transform)
+    dsets["train_u"] = ImageList_idx(train_u_txt, args, transform=image_train_transform)
     if args.imb:
         dset_loaders["train_x"] = DataLoader(dsets["train_x"], batch_size=args.batch_size,
                                              sampler=ImbalancedDatasetSampler(dsets["train"]),
@@ -53,7 +62,7 @@ def data_load(args):
     dset_loaders["train_u"] = DataLoader(dsets["train_u"], batch_size=args.batch_size, shuffle=False,
                                          num_workers=args.worker, drop_last=False)
 
-    dsets["test"] = ImageList(test_txt, args, transform=image_test())
+    dsets["test"] = ImageList(test_txt, args, transform=image_test_transform)
     dset_loaders["test"] = DataLoader(dsets["test"], batch_size=args.batch_size, shuffle=True,
                                       num_workers=args.worker, drop_last=True)
     print('Labeled training Data Count:', len(dsets["train_x"]), ', Distribution:')
@@ -87,6 +96,14 @@ def data_load(args):
 # larger than a threshold
 def obtain_confident_loader(loader, net, args):
     start_test = True
+
+    if args.net[0:5] == "senet":
+        image_train_transform = image_train(299)
+    elif args.net[0:3] == "ran":
+        image_train_transform = image_train(32)
+    else:
+        image_train_transform = image_train()
+
     with torch.no_grad():
         iter_test = iter(loader)
         for _ in range(len(loader)):
@@ -131,7 +148,7 @@ def obtain_confident_loader(loader, net, args):
     # get the samples which is confident samples to make labels
     dset = ImageList_confident(
         [train_u_txt[i] for i in confident_indices], args, pseudo_labels=predict[confident_indices].squeeze().numpy(), \
-        real_labels=all_label[confident_indices].int().numpy(), transform=image_train())
+        real_labels=all_label[confident_indices].int().numpy(), transform=image_train_transform)
     confident_dset_loader = DataLoader(dset, batch_size=args.batch_size, shuffle=True,
                                        num_workers=args.worker, drop_last=True)
 
@@ -176,10 +193,10 @@ def train_source(args):
     net.train()
 
     losses = []
-    losses_afm = []
+    losses_train = []
     focal_loss_class_proportion = FocalLossClassProportion(args.num_classes, args.class_proportion).cuda()
     uncertainty_loss = UncertaintyLoss(args.device, 0.8, 0.3)
-    unlabeled_loss_fn = uncertainty_loss
+    unlabeled_loss_fn = F.cross_entropy
     labeled_loss_fn = F.cross_entropy
     confident_loader = None
     while iter_num < max_iter:
@@ -210,22 +227,27 @@ def train_source(args):
             inputs_c, labels_c, real_c = inputs_c.cuda(), labels_c.cuda(), real_c.cuda()
 
             # if inputs_c.size(0) % 2 == 0:
-            logits_c, afm_logits_c = net(inputs_c, afm=True)
-            loss_c_afm = unlabeled_loss_fn(afm_logits_c, labels_c)
+            if not args.is_test_baselines:
+                logits_c, afm_logits_c = net(inputs_c, afm=True)
+                loss_c = unlabeled_loss_fn(afm_logits_c, labels_c)
+            else:
+                features_c, logits_c = net(inputs_c)
+                loss_c = F.cross_entropy(logits_c, labels_c)
 
             _, preds_c = torch.max(logits_c.data, 1)
             num_correct_c = torch.sum(preds_c == real_c.data)
             running_corrects_c = num_correct_c.float() / float(preds_c.shape[0]) * 100
 
         # AFM
-        logits_train, afm_logits_train = net(inputs_x, afm=True)
-        if True:
-            loss_afm = args.weight_naive * labeled_loss_fn(
+        if not args.is_test_baselines:
+            logits_train, afm_logits_train = net(inputs_x, afm=True)
+            loss_train = args.weight_naive * labeled_loss_fn(
                 afm_logits_train, labels_x) + args.weight_afm * labeled_loss_fn(logits_train, labels_x)
+            losses_train.append(loss_train.item())
         else:
-            loss_afm = args.weight_naive * unlabeled_loss_fn(
-                afm_logits_train, labels_x) + args.weight_afm * unlabeled_loss_fn(logits_train, labels_x)
-        losses_afm.append(loss_afm.item())
+            features_train, logits_train = net(inputs_x)
+            loss_train = F.cross_entropy(logits_train, labels_x)
+            losses_train.append(loss_train.item())
 
         # Running Accuracy
         _, preds_x = torch.max(logits_train.data, 1)
@@ -234,18 +256,18 @@ def train_source(args):
 
         args.num_eval = iter_num
         if epoch < args.start_u:
-            loss = loss_afm
-            print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, acc_x: {:.2f}%'
-                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), running_corrects_x.item()))
-            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
+            loss = loss_train
+            print('epoch:{}/{}, iter:{}/{}, loss_train: {:.2f}, acc_x: {:.2f}%'
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_train.item(), running_corrects_x.item()))
+            args.writer.add_scalar("train/1.loss_train", loss_train.item(), args.num_eval)
             args.writer.add_scalar("train/2.acc_x", running_corrects_x.item(), args.num_eval)
         else:
-            loss = loss_afm + args.weight_u * loss_c_afm
-            print('epoch:{}/{}, iter:{}/{}, loss_afm: {:.2f}, loss_c_afm: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
-                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_afm.item(), loss_c_afm.item(), \
+            loss = loss_train + args.weight_u * loss_c
+            print('epoch:{}/{}, iter:{}/{}, loss_train: {:.2f}, loss_c: {:.2f}, acc_x: {:.2f}%, acc_u: {:.2f}'
+                  .format(epoch + 1, args.max_epoch, iter_num, max_iter, loss_train.item(), loss_c.item(), \
                           running_corrects_x.item(), running_corrects_c.item()))
-            args.writer.add_scalar("train/1.loss_afm", loss_afm.item(), args.num_eval)
-            args.writer.add_scalar("train/2.loss_c_afm", loss_c_afm.item(), args.num_eval)
+            args.writer.add_scalar("train/1.loss_train", loss_train.item(), args.num_eval)
+            args.writer.add_scalar("train/2.loss_c", loss_c.item(), args.num_eval)
             args.writer.add_scalar("train/3.acc_x", running_corrects_x.item(), args.num_eval)
             args.writer.add_scalar("train/4.acc_u", running_corrects_c.item(), args.num_eval)
 
@@ -262,19 +284,21 @@ def train_source(args):
             net.eval()
             features, logits, y_true, y_predict = get_test_data(dset_loaders['test'], net)
 
+            accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
+                                                            get_metrics_sev_class(logits, y_true, y_predict)
+
             if args.num_classes == 2:
                 accuracy, kappa, report, sensitivity, specificity, roc_auc = get_metrics(logits, y_true, y_predict)
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f},' \
                           ' Sensitivity = {:.4f}, Specificity = {:.4f}, AUROC = {:.4f}' \
+                          'F1 = {:.4f}, Precision = {:.4f}, Recall = {:.4f}' \
                     .format(epoch + 1, args.max_epoch, iter_num, max_iter, accuracy,
-                            kappa, sensitivity, specificity, roc_auc)
+                            kappa, sensitivity, specificity, roc_auc, f1, precision, recall)
                 log_str_report = 'Report:{:.2f}%,{:.4f},{:.4f},{:.4f},{:.4f}' \
                     .format(accuracy, kappa, sensitivity, specificity, roc_auc)
                 args.writer.add_scalar("test/1.Accuracy", accuracy, args.num_eval)
                 args.writer.add_scalar("test/2.Kappa", kappa, args.num_eval)
             else:
-                accuracy, kappa, report, sensitivity, specificity, roc_auc, f1, recall, precision = \
-                    get_metrics_sev_class(logits, y_true, y_predict)
                 log_str = 'Epoch:{}/{}, Iter:{}/{}; Accuracy = {:.2f}%, Kappa = {:.4f}, ' \
                           'F1 = {:.4f}, Recall = {:.4f}, Precision = {:.4f}'.format(
                     epoch + 1, args.max_epoch, iter_num, max_iter, accuracy, kappa, f1, precision, recall)
@@ -301,10 +325,8 @@ def train_source(args):
 
             net.train()
 
-    with open(osp.join(args.output_dir_train, 'losses.txt'), "w") as fp:
-        json.dump(losses, fp)
-    with open(osp.join(args.output_dir_train, 'losses_afm.txt'), "w") as fp:
-        json.dump(losses_afm, fp)
+    with open(osp.join(args.output_dir_train, 'losses_train.txt'), "w") as fp:
+        json.dump(losses_train, fp)
 
     return net
 
@@ -323,7 +345,7 @@ if __name__ == "__main__":
                         default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data'
                                 '/semi_processed_absolute',
                         help='source dataset path')
-    parser.add_argument('--check_points_path', type=str, default="checkpoints path to save",
+    parser.add_argument('--check_points_path', type=str, default="ckps_default",
                         help='path to save checkpoints.')
     parser.add_argument('--gpu_ids', type=str, nargs='?', default='0,1,2,3,4,5,6,7', help="device id to run")
     # parser.add_argument('--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help="device id to run")
@@ -351,6 +373,8 @@ if __name__ == "__main__":
     parser.add_argument('--net', type=str, default='resnet50')
     parser.add_argument('--seed', type=int, default=2021, help="random seed")
 
+    parser.add_argument('--is_test_baselines', type=bool, default=False,
+                        help="Whether the exp is baseline test")
     parser.add_argument('--weight-naive', default=0, type=float, help='loss weight of afm labeled')
     parser.add_argument('--weight-afm', default=0.5, type=float, help='loss weight of ce labeled')
     parser.add_argument('--weight-u', default=0.5, type=float, help='loss weight of afm unlabeled')
