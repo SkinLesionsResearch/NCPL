@@ -2,9 +2,7 @@
 Trying to handle ham10000 dataset with semi-supervised learning methods for skin lesion image classification.
 
 ## About:
-NCPL (Noisy-consistent Pseudo Labeling Model) provides a consistency semi-supervised framework. This framework incoroprates a robust pseudo label 
-generation and selection mechanism and an attentive feature integration components to classify skin lesion images in a scenario which is lack of 
-clean annotation image samples.
+NCPL (Noisy-consistent Pseudo Labeling Model) provides a noisy consistent semi-supervised framework. In the absence of clear annotation image samples, this approach incorporates a robust pseudo label creation and selection method, as well as an attentive feature integration component, to categorize skin lesion images.
 
 ## Installation:
 
