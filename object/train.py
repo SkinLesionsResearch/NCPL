@@ -1,8 +1,8 @@
 import argparse
 import os, sys
 
-os.chdir("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
-sys.path.append("/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer")
+os.chdir("../semi_skin_cancer")
+sys.path.append("../semi_skin_cancer")
 import os.path as osp
 import numpy as np
 import torch
@@ -342,8 +342,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='My Classification')
     parser.add_argument('--name', type=str, default="afm-resnet", help='experiment name')
     parser.add_argument('--src-dset-path', type=str,
-                        default='/home/jackie/ResearchArea/SkinCancerResearch/semi_skin_cancer/data'
-                                '/semi_processed_absolute',
+                        default='data/semi_processed',
                         help='source dataset path')
     parser.add_argument('--check_points_path', type=str, default="ckps_default",
                         help='path to save checkpoints.')
