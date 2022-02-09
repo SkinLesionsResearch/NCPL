@@ -1,8 +1,8 @@
 import argparse
 import os, sys
 
-os.chdir("../semi_skin_cancer")
-sys.path.append("../semi_skin_cancer")
+sys.path.append("..")
+sys.path.append(".")
 import os.path as osp
 import numpy as np
 import torch
@@ -12,7 +12,7 @@ import pandas as pd
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
-from object.data_list import ImageList, ImageList_idx, ImageList_confident
+from data_list import ImageList, ImageList_idx, ImageList_confident
 import json
 import random
 from evaluation.metrics import get_metrics, get_metrics_sev_class, get_test_data
